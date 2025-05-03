@@ -34,31 +34,31 @@ SIGNAL_REPLY_MODULE_COMMAND SignalReplyModule::getCommand(const meshtastic_MeshP
     
     LOG_ERROR("SignalReplyModule::getCommand(): '%s' from %s.", messageRequest, currentRequest.from == 0 ? "local" : std::to_string(currentRequest.from).c_str());
     
-    if (strcasestr_custom(messageRequest, "ping on") == 0)
+    if (strcasestr_custom(messageRequest, "ping on") != nullptr)
     {
         return SERVICE_PING_ON;
     }
-    else if (strcasestr_custom(messageRequest, "ping off") == 0)
+    else if (strcasestr_custom(messageRequest, "ping off") != nullptr)
     {
         return SERVICE_PING_OFF;
     }
-    else if (strcasestr_custom(messageRequest, "ping") == 0)
+    else if (strcasestr_custom(messageRequest, "ping") != nullptr)
     {
         return REQUEST_PING_REPLY;
     }
-    else if (strcasestr_custom(messageRequest, "services?") == 0)
+    else if (strcasestr_custom(messageRequest, "services?") != nullptr)
     {
         return SERVICE_DISCOVERY;
     }
-    else if (strcasestr_custom(messageRequest, "loc on") == 0)
+    else if (strcasestr_custom(messageRequest, "loc on") != nullptr)
     {
         return SERVICE_LOC_ON;
     }
-    else if (strcasestr_custom(messageRequest, "loc off") == 0)
+    else if (strcasestr_custom(messageRequest, "loc off") != nullptr)
     {
         return SERVICE_LOC_OFF;
     }
-    else if (strcasestr_custom(messageRequest, "seq ") == 0)
+    else if (strcasestr_custom(messageRequest, "seq ") != nullptr)
     {
         return REQUEST_LOC_REPLY;
     }

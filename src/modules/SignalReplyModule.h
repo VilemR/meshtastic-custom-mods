@@ -31,7 +31,7 @@ class SignalReplyModule : public SinglePortModule, public Observable<const mesht
     virtual meshtastic_MeshPacket *allocReply() override;
     virtual bool wantPacket(const meshtastic_MeshPacket *p) override;
     virtual ProcessMessage handleReceived(const meshtastic_MeshPacket &mp) override;
-    SIGNAL_REPLY_MODULE_COMMAND getCommand(const char *command)
+    SIGNAL_REPLY_MODULE_COMMAND getCommand(const char *command);
 
 };
 

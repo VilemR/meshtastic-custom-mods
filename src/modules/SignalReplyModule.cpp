@@ -52,7 +52,6 @@ SIGNAL_REPLY_MODULE_COMMAND SignalReplyModule::getCommand(const char *command)
     {
         return REQUEST_LOC_REPLY;
     }
-    return nullptr;
 }
 
 void reply(const meshtastic_MeshPacket &currentRequest, SIGNAL_REPLY_MODULE_COMMAND command)
@@ -114,7 +113,7 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
         {
             pingServiceEnabled = 1;
             LOG_INFO("SignalReplyModule::handleReceived(): Ping service enabled.");
-            reply(&currentRequest,command)
+            reply(currentRequest,command);
         }
         else if (command == SERVICE_PING_OFF && currentRequest.to == nodeDB->getNodeNum())
         {
@@ -129,7 +128,7 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
         {
             locServiceEnabled = 1;
             LOG_INFO("SignalReplyModule::handleReceived(): Location service enabled.");
-            reply(&currentRequest,command)
+            reply(currentRequest,command);
         }
         else if (command == SERVICE_LOC_OFF && currentRequest.to == nodeDB->getNodeNum())
         {
@@ -139,16 +138,12 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
         else if (command == REQUEST_PING_REPLY)
         {
             LOG_INFO("SignalReplyModule::handleReceived(): Ping reply requested.");
-            reply(&currentRequest,command)
+            reply(currentRequest,command);
         }
         else if (command == REQUEST_LOC_REPLY)
         {
             LOG_INFO("SignalReplyModule::handleReceived(): Location reply requested.");
-            reply(&currentRequest,command)
-        }
-        else if (command == nullptr)
-        {
-            LOG_INFO("SignalReplyModule::handleReceived(): Unknown command.");
+            reply(currentRequest,command);
         } else {
             LOG_INFO("SignalReplyModule::handleReceived()  FROM:", currentRequest.from);
             LOG_INFO("SignalReplyModule::handleReceived()  TO:", currentRequest.to);

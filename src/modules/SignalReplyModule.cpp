@@ -5,47 +5,80 @@
 
 SignalReplyModule *signalReplyModule;
 
-ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &currentRequest)
+const char *strcasestr_custom(const char *haystack, const char *needle)
 {
-    auto &p = currentRequest.decoded;
-    char messageRequest[250];
-    for (size_t i = 0; i < p.payload.size; ++i)
+    if (!haystack || !needle)
+        return nullptr;
+    size_t needle_len = strlen(needle);
+    if (!needle_len)
+        return haystack;
+    for (; *haystack; ++haystack)
     {
-        messageRequest[i] = static_cast<char>(p.payload.bytes[i]);
+        if (strncasecmp(haystack, needle, needle_len) == 0)
+        {
+            return haystack;
+        }
     }
-    messageRequest[p.payload.size] = '\0';
+    return nullptr;
+}
 
-    //Received text msg from=0x0, id=0xf50fd53d, msg=Ping
-    if ((strcasestr(messageRequest, const_cast<char *>("ping")) == 0 ||
-         strcasestr(messageRequest, const_cast<char *>("seq ")) == 0) &&
-         currentRequest.from != 0x0 &&  //fix 2025-05-08
-         currentRequest.from != nodeDB->getNodeNum())
+SIGNAL_REPLY_MODULE_COMMAND SignalReplyModule::getCommand(const char *command)
+{
+    if (strcasestr_custom(command, "ping on") == 0)
+    {
+        return SERVICE_PING_ON;
+    }
+    else if (strcasestr_custom(command, "ping off") == 0)
+    {
+        return SERVICE_PING_OFF;
+    }
+    else if (strcasestr_custom(command, "ping") == 0)
+    {
+        return REQUEST_PING_REPLY;
+    }
+    else if (strcasestr_custom(command, "services?") == 0)
+    {
+        return SERVICE_DISCOVERY;
+    }
+    else if (strcasestr_custom(command, "loc on") == 0)
+    {
+        return SERVICE_LOC_ON;
+    }
+    else if (strcasestr_custom(command, "loc off") == 0)
+    {
+        return SERVICE_LOC_OFF;
+    }
+    else if (strcasestr_custom(command, "seq ") == 0)
+    {
+        return REQUEST_LOC_REPLY;
+    }
+    return nullptr;
+}
+
+void reply(const meshtastic_MeshPacket &currentRequest, SIGNAL_REPLY_MODULE_COMMAND command)
+{
+    if (currentRequest.from != 0x0 && currentRequest.from != nodeDB->getNodeNum())
     {
         int hopLimit = currentRequest.hop_limit;
         int hopStart = currentRequest.hop_start;
-
         char idSender[10];
         char idReceipient[10];
         snprintf(idSender, sizeof(idSender), "%d", currentRequest.from);
         snprintf(idReceipient, sizeof(idReceipient), "%d", nodeDB->getNodeNum());
-
         char messageReply[250];
         meshtastic_NodeInfoLite *nodeSender = nodeDB->getMeshNode(currentRequest.from);
-        const char *username = nodeSender->has_user ? nodeSender->user.short_name : idSender;
+        const char *nodeRequesting = nodeSender->has_user ? nodeSender->user.short_name : idSender;
         meshtastic_NodeInfoLite *nodeReceiver = nodeDB->getMeshNode(nodeDB->getNodeNum());
-        const char *usernameja = nodeReceiver->has_user ? nodeReceiver->user.short_name : idReceipient;
-
-        LOG_ERROR("SignalReplyModule::handleReceived(): '%s' from %s.", messageRequest, username);
-
+        const char *nodeMeassuring = nodeReceiver->has_user ? nodeReceiver->user.short_name : idReceipient;
+        LOG_ERROR("SignalReplyModule::handleReceived(): '%s' from %s.", messageRequest, nodeRequesting);
         if (hopLimit != hopStart)
         {
-            snprintf(messageReply, sizeof(messageReply), "%s: RSSI/SNR cannot be determined due to indirect connection through %d nodes!", username, (hopLimit - hopStart));
+            snprintf(messageReply, sizeof(messageReply), "%s: RSSI/SNR cannot be determined due to indirect connection through %d nodes!", nodeRequesting, (hopLimit - hopStart));
         }
         else
         {
-            snprintf(messageReply, sizeof(messageReply), "Request '%s'->'%s' : RSSI %d dBm, SNR %.1f dB (@%s).", username, usernameja, currentRequest.rx_rssi, currentRequest.rx_snr, usernameja);
+            snprintf(messageReply, sizeof(messageReply), "Request '%s'->'%s' : RSSI %d dBm, SNR %.1f dB (@%s).", nodeRequesting, nodeMeassuring, currentRequest.rx_rssi, currentRequest.rx_snr, nodeMeassuring);
         }
-
         auto reply = allocDataPacket();
         reply->decoded.portnum = meshtastic_PortNum_TEXT_MESSAGE_APP;
         reply->decoded.payload.size = strlen(messageReply);
@@ -60,6 +93,74 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
         reply->id = generatePacketId();
         memcpy(reply->decoded.payload.bytes, messageReply, reply->decoded.payload.size);
         service->handleToRadio(*reply);
+    }
+}
+
+ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &currentRequest)
+{
+    if (currentRequest.from != 0x0 && currentRequest.from != nodeDB->getNodeNum())
+    {
+        auto &p = currentRequest.decoded;
+        char messageRequest[250];
+        for (size_t i = 0; i < p.payload.size; ++i)
+        {
+            messageRequest[i] = static_cast<char>(p.payload.bytes[i]);
+        }
+        messageRequest[p.payload.size] = '\0';
+
+        SIGNAL_REPLY_MODULE_COMMAND command = getCommand(messageRequest);
+
+        if (command == SERVICE_PING_ON && currentRequest.to == nodeDB->getNodeNum())
+        {
+            pingServiceEnabled = 1;
+            LOG_INFO("SignalReplyModule::handleReceived(): Ping service enabled.");
+            reply(&currentRequest,command)
+        }
+        else if (command == SERVICE_PING_OFF && currentRequest.to == nodeDB->getNodeNum())
+        {
+            pingServiceEnabled = 0;
+            LOG_INFO("SignalReplyModule::handleReceived(): Ping service disabled.");
+        }
+        else if (command == SERVICE_DISCOVERY)
+        {
+            LOG_INFO("SignalReplyModule::handleReceived(): Service discovery requested.");
+        }
+        else if (command == SERVICE_LOC_ON && currentRequest.to == nodeDB->getNodeNum())
+        {
+            locServiceEnabled = 1;
+            LOG_INFO("SignalReplyModule::handleReceived(): Location service enabled.");
+            reply(&currentRequest,command)
+        }
+        else if (command == SERVICE_LOC_OFF && currentRequest.to == nodeDB->getNodeNum())
+        {
+            locServiceEnabled = 0;
+            LOG_INFO("SignalReplyModule::handleReceived(): Location service disabled.");
+        }
+        else if (command == REQUEST_PING_REPLY)
+        {
+            LOG_INFO("SignalReplyModule::handleReceived(): Ping reply requested.");
+            reply(&currentRequest,command)
+        }
+        else if (command == REQUEST_LOC_REPLY)
+        {
+            LOG_INFO("SignalReplyModule::handleReceived(): Location reply requested.");
+            reply(&currentRequest,command)
+        }
+        else if (command == nullptr)
+        {
+            LOG_INFO("SignalReplyModule::handleReceived(): Unknown command.");
+        } else {
+            LOG_INFO("SignalReplyModule::handleReceived()  FROM:", currentRequest.from);
+            LOG_INFO("SignalReplyModule::handleReceived()  TO:", currentRequest.to);
+            //LOG_INFO("SignalReplyModule::handleReceived()  HOP_LIMIT:", currentRequest.hop_limit);
+            //LOG_INFO("SignalReplyModule::handleReceived()  HOP_START:", currentRequest.hop_start);
+            //LOG_INFO("SignalReplyModule::handleReceived()  RX_RSSI:", currentRequest.rx_rssi);
+            //LOG_INFO("SignalReplyModule::handleReceived()  RX_SNR:", currentRequest.rx_snr);
+            LOG_INFO("SignalReplyModule::handleReceived()  PORTNUM:", p.portnum);
+            //LOG_INFO("SignalReplyModule::handleReceived()  CHANNEL:", currentRequest.channel);
+            //LOG_INFO("SignalReplyModule::handleReceived()  PRIORITY:", currentRequest.priority);
+            //LOG_INFO("SignalReplyModule::handleReceived()  WANT_ACK:", currentRequest.want_ack);
+        }
     }
     notifyObservers(&currentRequest);
     return ProcessMessage::CONTINUE;

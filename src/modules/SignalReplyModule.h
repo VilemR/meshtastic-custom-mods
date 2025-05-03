@@ -9,7 +9,8 @@ enum SIGNAL_REPLY_MODULE_COMMAND {
   SERVICE_DISCOVERY,      // 2
   SERVICE_LOC_ON,
   SERVICE_LOC_OFF,
-  REQUEST_LOC_REPLY
+  REQUEST_LOC_REPLY,
+  UNKNOWN_COMMAND
 };
 
 class SignalReplyModule : public SinglePortModule, public Observable<const meshtastic_MeshPacket *>
@@ -31,7 +32,8 @@ class SignalReplyModule : public SinglePortModule, public Observable<const mesht
     virtual meshtastic_MeshPacket *allocReply() override;
     virtual bool wantPacket(const meshtastic_MeshPacket *p) override;
     virtual ProcessMessage handleReceived(const meshtastic_MeshPacket &mp) override;
-    SIGNAL_REPLY_MODULE_COMMAND getCommand(const char *command);
+    SIGNAL_REPLY_MODULE_COMMAND getCommand(const meshtastic_MeshPacket &currentRequest);
+    void reply(const meshtastic_MeshPacket &currentRequest, SIGNAL_REPLY_MODULE_COMMAND command);
 
 };
 

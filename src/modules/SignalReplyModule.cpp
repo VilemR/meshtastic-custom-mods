@@ -133,7 +133,6 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
     if (currentRequest.from != 0x0 && currentRequest.from != nodeDB->getNodeNum())
     {
         SIGNAL_REPLY_MODULE_COMMAND command = getCommand(currentRequest);
-
         if (command == SERVICE_PING_ON && currentRequest.to == nodeDB->getNodeNum())
         {
             pingServiceEnabled = 1;
@@ -160,26 +159,34 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
             locServiceEnabled = 0;
             LOG_INFO("SignalReplyModule::handleReceived(): Location service disabled.");
         }
-        else if (command == REQUEST_PING_REPLY)
+        else if (command == REQUEST_PING_REPLY &&  pingServiceEnabled == 1)
         {
             LOG_INFO("SignalReplyModule::handleReceived(): Ping reply requested.");
             reply(currentRequest,command);
+        }    
+        else if (command == REQUEST_PING_REPLY &&  pingServiceEnabled == 0)
+        {
+            LOG_INFO("SignalReplyModule::handleReceived(): Ping reply ignored (OFF)");
         }
-        else if (command == REQUEST_LOC_REPLY)
+        else if (command == REQUEST_LOC_REPLY &&  locServiceEnabled == 1)
         {
             LOG_INFO("SignalReplyModule::handleReceived(): Location reply requested.");
             reply(currentRequest,command);
+        }
+        else if (command == REQUEST_LOC_REPLY &&  locServiceEnabled == 0)
+        {
+            LOG_INFO("SignalReplyModule::handleReceived(): Location reply ignored (OFF)");
         } else {
-            LOG_INFO("SignalReplyModule::handleReceived()  FROM: %s ", std::to_string(currentRequest.from).c_str());
-            LOG_INFO("SignalReplyModule::handleReceived()  TO: %s", std::to_string(currentRequest.to).c_str());
-            //LOG_INFO("SignalReplyModule::handleReceived()  HOP_LIMIT:", currentRequest.hop_limit);
-            //LOG_INFO("SignalReplyModule::handleReceived()  HOP_START:", currentRequest.hop_start);
-            //LOG_INFO("SignalReplyModule::handleReceived()  RX_RSSI:", currentRequest.rx_rssi);
-            //LOG_INFO("SignalReplyModule::handleReceived()  RX_SNR:", currentRequest.rx_snr);
+            LOG_INFO("SignalReplyModule::handleReceived()     FROM: %s", std::to_string(currentRequest.from).c_str());
+            LOG_INFO("SignalReplyModule::handleReceived()       TO: %s", std::to_string(currentRequest.to).c_str());
             LOG_INFO("SignalReplyModule::handleReceived()  PORTNUM: %s", std::to_string(currentRequest.decoded.portnum).c_str() );
             //LOG_INFO("SignalReplyModule::handleReceived()  CHANNEL:", currentRequest.channel);
             //LOG_INFO("SignalReplyModule::handleReceived()  PRIORITY:", currentRequest.priority);
             //LOG_INFO("SignalReplyModule::handleReceived()  WANT_ACK:", currentRequest.want_ack);
+            //LOG_INFO("SignalReplyModule::handleReceived()  HOP_LIMIT:", currentRequest.hop_limit);
+            //LOG_INFO("SignalReplyModule::handleReceived()  HOP_START:", currentRequest.hop_start);
+            //LOG_INFO("SignalReplyModule::handleReceived()  RX_RSSI:", currentRequest.rx_rssi);
+            //LOG_INFO("SignalReplyModule::handleReceived()  RX_SNR:", currentRequest.rx_snr);
         }
     }
     notifyObservers(&currentRequest);

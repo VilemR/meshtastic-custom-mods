@@ -25,13 +25,15 @@ const char *strcasestr_custom(const char *haystack, const char *needle)
 SIGNAL_REPLY_MODULE_COMMAND SignalReplyModule::getCommand(const meshtastic_MeshPacket &currentRequest)
 {
     auto &p = currentRequest.decoded;
-        char messageRequest[250];
-        for (size_t i = 0; i < p.payload.size; ++i)
-        {
-            messageRequest[i] = static_cast<char>(p.payload.bytes[i]);
-        }
-        messageRequest[p.payload.size] = '\0';
-
+    char messageRequest[250];
+    for (size_t i = 0; i < p.payload.size; ++i)
+    {
+        messageRequest[i] = static_cast<char>(p.payload.bytes[i]);
+    }
+    messageRequest[p.payload.size] = '\0';
+    
+    LOG_ERROR("SignalReplyModule::getCommand(): '%s' from %s.", messageRequest, currentRequest.from == 0 ? "local" : std::to_string(currentRequest.from).c_str());
+    
     if (strcasestr_custom(messageRequest, "ping on") == 0)
     {
         return SERVICE_PING_ON;
@@ -63,13 +65,33 @@ SIGNAL_REPLY_MODULE_COMMAND SignalReplyModule::getCommand(const meshtastic_MeshP
     return UNKNOWN_COMMAND;
 }
 
+const char* commandToString(SIGNAL_REPLY_MODULE_COMMAND command) {
+    switch (command) {
+        case SERVICE_PING_ON:
+            return "SERVICE_PING_ON";
+        case SERVICE_PING_OFF:
+            return "SERVICE_PING_OFF";
+        case REQUEST_PING_REPLY:
+            return "REQUEST_PING_REPLY";
+        case SERVICE_DISCOVERY:
+            return "SERVICE_DISCOVERY";
+        case SERVICE_LOC_ON:
+            return "SERVICE_LOC_ON";
+        case SERVICE_LOC_OFF:
+            return "SERVICE_LOC_OFF";
+        case REQUEST_LOC_REPLY:
+            return "REQUEST_LOC_REPLY";
+        case UNKNOWN_COMMAND:
+        default:
+            return "UNKNOWN_COMMAND";
+    }
+}
+
 void SignalReplyModule::reply(const meshtastic_MeshPacket &currentRequest, SIGNAL_REPLY_MODULE_COMMAND command)
 {
     if (currentRequest.from != 0x0 && currentRequest.from != nodeDB->getNodeNum())
     {
-
-        
-
+        LOG_INFO("SignalReplyModule::reply(): COMMAND %s.", commandToString(command));
         int hopLimit = currentRequest.hop_limit;
         int hopStart = currentRequest.hop_start;
         char idSender[10];
@@ -81,7 +103,6 @@ void SignalReplyModule::reply(const meshtastic_MeshPacket &currentRequest, SIGNA
         const char *nodeRequesting = nodeSender->has_user ? nodeSender->user.short_name : idSender;
         meshtastic_NodeInfoLite *nodeReceiver = nodeDB->getMeshNode(nodeDB->getNodeNum());
         const char *nodeMeassuring = nodeReceiver->has_user ? nodeReceiver->user.short_name : idReceipient;
-        //LOG_ERROR("SignalReplyModule::handleReceived(): '%s' from %s.", messageRequest, nodeRequesting);
         if (hopLimit != hopStart)
         {
             snprintf(messageReply, sizeof(messageReply), "%s: RSSI/SNR cannot be determined due to indirect connection through %d nodes!", nodeRequesting, (hopLimit - hopStart));
@@ -149,13 +170,13 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
             LOG_INFO("SignalReplyModule::handleReceived(): Location reply requested.");
             reply(currentRequest,command);
         } else {
-            LOG_INFO("SignalReplyModule::handleReceived()  FROM:", currentRequest.from);
-            LOG_INFO("SignalReplyModule::handleReceived()  TO:", currentRequest.to);
+            LOG_INFO("SignalReplyModule::handleReceived()  FROM: %s ", std::to_string(currentRequest.from).c_str());
+            LOG_INFO("SignalReplyModule::handleReceived()  TO: %s", std::to_string(currentRequest.to).c_str());
             //LOG_INFO("SignalReplyModule::handleReceived()  HOP_LIMIT:", currentRequest.hop_limit);
             //LOG_INFO("SignalReplyModule::handleReceived()  HOP_START:", currentRequest.hop_start);
             //LOG_INFO("SignalReplyModule::handleReceived()  RX_RSSI:", currentRequest.rx_rssi);
             //LOG_INFO("SignalReplyModule::handleReceived()  RX_SNR:", currentRequest.rx_snr);
-            LOG_INFO("SignalReplyModule::handleReceived()  PORTNUM:", currentRequest.decoded.portnum);
+            LOG_INFO("SignalReplyModule::handleReceived()  PORTNUM: %s", std::to_string(currentRequest.decoded.portnum).c_str() );
             //LOG_INFO("SignalReplyModule::handleReceived()  CHANNEL:", currentRequest.channel);
             //LOG_INFO("SignalReplyModule::handleReceived()  PRIORITY:", currentRequest.priority);
             //LOG_INFO("SignalReplyModule::handleReceived()  WANT_ACK:", currentRequest.want_ack);

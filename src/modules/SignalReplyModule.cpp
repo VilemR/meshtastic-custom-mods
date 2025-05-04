@@ -49,7 +49,8 @@ SIGNAL_REPLY_MODULE_COMMAND SignalReplyModule::getCommand(const meshtastic_MeshP
     {
         return REQUEST_PING_REPLY;
     }
-    else if (strcasestr_custom(messageRequest, "services?") || strcasestr_custom(messageRequest, "serv?") != nullptr)
+    else if (strcasestr_custom(messageRequest, "services?") || strcasestr_custom(messageRequest, "serv?") != nullptr ||
+             strcasestr_custom(messageRequest, "service?") != nullptr)
     {
         return SERVICE_DISCOVERY;
     }

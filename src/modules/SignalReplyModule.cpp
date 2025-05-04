@@ -136,6 +136,11 @@ void SignalReplyModule::reply(const meshtastic_MeshPacket &currentRequest, SIGNA
     }
 }
 
+bool isWithinTimespanMs(uint32_t activationTime, uint32_t timeSpanMs)
+{
+    return (millis() - activationTime) < timeSpanMs;
+}
+
 ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &currentRequest)
 {
     if (currentRequest.from != 0x0 && currentRequest.from != nodeDB->getNodeNum())
@@ -144,6 +149,7 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
         if (command == SERVICE_PING_ON && currentRequest.to == nodeDB->getNodeNum())
         {
             pingServiceEnabled = 1;
+            activationPingTime = millis();
             LOG_INFO("SignalReplyModule::handleReceived(): Ping service enabled.");
             reply(currentRequest,command);
         }
@@ -160,6 +166,7 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
         else if (command == SERVICE_LOC_ON && currentRequest.to == nodeDB->getNodeNum())
         {
             locServiceEnabled = 1;
+            activationLocTime = millis();
             LOG_INFO("SignalReplyModule::handleReceived(): Location service enabled.");
             reply(currentRequest,command);
         }
@@ -170,8 +177,14 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
         }
         else if (command == REQUEST_PING_REPLY &&  pingServiceEnabled == 1)
         {
-            LOG_INFO("SignalReplyModule::handleReceived(): Ping reply requested.");
-            reply(currentRequest,command);
+            if (isWithinTimespanMs(activationPingTime, EXPIRATION_TIME_MS))
+            {
+                LOG_INFO("SignalReplyModule::handleReceived(): Ping reply requested.");
+                reply(currentRequest,command);    
+            } else {
+                LOG_INFO("SignalReplyModule::handleReceived(): Ping reply ignored (activation expired)");
+                pingServiceEnabled = 0;
+            }
         }    
         else if (command == REQUEST_PING_REPLY &&  pingServiceEnabled == 0)
         {
@@ -179,8 +192,13 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
         }
         else if (command == REQUEST_LOC_REPLY &&  locServiceEnabled == 1)
         {
-            LOG_INFO("SignalReplyModule::handleReceived(): Location reply requested.");
-            reply(currentRequest,command);
+            if (isWithinTimespanMs(activationLocTime, EXPIRATION_TIME_MS)){
+                LOG_INFO("SignalReplyModule::handleReceived(): Location reply requested.");
+                reply(currentRequest,command);
+            } else {
+                LOG_INFO("SignalReplyModule::handleReceived(): Location reply ignored (activation expired)");
+                locServiceEnabled = 0;
+            }
         }
         else if (command == REQUEST_LOC_REPLY &&  locServiceEnabled == 0)
         {

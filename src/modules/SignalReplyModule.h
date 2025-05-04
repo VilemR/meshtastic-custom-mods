@@ -33,8 +33,8 @@ class SignalReplyModule : public SinglePortModule, public Observable<const mesht
     unsigned long activationPingTime = 0;
     unsigned long activationLocTime = 0;
 
-    //unsigned long EXPIRATION_TIME_MS = 1000 * 60 * 60 * 8; 
-    unsigned long EXPIRATION_TIME_MS = 1000 * 60; 
+    unsigned long EXPIRATION_TIME_MS = 1000 * 60 * 60 * 8; 
+    //unsigned long EXPIRATION_TIME_MS = 1000 * 60; 
 
     virtual meshtastic_MeshPacket *allocReply() override;
     virtual bool wantPacket(const meshtastic_MeshPacket *p) override;

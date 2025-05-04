@@ -3,6 +3,9 @@
 #include "configuration.h"
 #include "main.h"
 
+// TODO : service enabled to requestor only (to avoid flooding the network with ping-reply requests to not interested users)
+// TODO : Pri preposilani Seq ? placeholder na GPS souradnice
+
 SignalReplyModule *signalReplyModule;
 
 const char *strcasestr_custom(const char *haystack, const char *needle)
@@ -46,7 +49,7 @@ SIGNAL_REPLY_MODULE_COMMAND SignalReplyModule::getCommand(const meshtastic_MeshP
     {
         return REQUEST_PING_REPLY;
     }
-    else if (strcasestr_custom(messageRequest, "services?") != nullptr)
+    else if (strcasestr_custom(messageRequest, "services?") || strcasestr_custom(messageRequest, "serv?") != nullptr)
     {
         return SERVICE_DISCOVERY;
     }
@@ -96,6 +99,7 @@ void SignalReplyModule::reply(const meshtastic_MeshPacket &currentRequest, SIGNA
         int hopStart = currentRequest.hop_start;
         char idSender[10];
         char idReceipient[10];
+        int hopDistance = hopLimit - hopStart;
         snprintf(idSender, sizeof(idSender), "%d", currentRequest.from);
         snprintf(idReceipient, sizeof(idReceipient), "%d", nodeDB->getNodeNum());
         char messageReply[250];
@@ -103,9 +107,13 @@ void SignalReplyModule::reply(const meshtastic_MeshPacket &currentRequest, SIGNA
         const char *nodeRequesting = nodeSender->has_user ? nodeSender->user.short_name : idSender;
         meshtastic_NodeInfoLite *nodeReceiver = nodeDB->getMeshNode(nodeDB->getNodeNum());
         const char *nodeMeassuring = nodeReceiver->has_user ? nodeReceiver->user.short_name : idReceipient;
-        if (hopLimit != hopStart)
+        if (command==SERVICE_DISCOVERY) {
+            snprintf(messageReply, sizeof(messageReply), "Available services : PING (ON/OFF), LOC (ON/OFF), FILTER, FORWARDER, BRIDGE, STAT");
+            //snprintf(messageReply, sizeof(messageReply), "Available services @%s: PING (ON/OFF), LOC (ON/OFF), FILTER, FORWARDER, BRIDGE, STAT (HOP %s)", nodeMeassuring,hopDistance);
+        }
+        else if (hopLimit != hopStart)
         {
-            snprintf(messageReply, sizeof(messageReply), "%s: RSSI/SNR cannot be determined due to indirect connection through %d nodes!", nodeRequesting, (hopLimit - hopStart));
+            snprintf(messageReply, sizeof(messageReply), "%s: RSSI/SNR cannot be determined due to indirect connection through %d nodes!", nodeRequesting, (hopDistance));
         }
         else
         {
@@ -147,6 +155,7 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
         else if (command == SERVICE_DISCOVERY)
         {
             LOG_INFO("SignalReplyModule::handleReceived(): Service discovery requested.");
+            reply(currentRequest,command);
         }
         else if (command == SERVICE_LOC_ON && currentRequest.to == nodeDB->getNodeNum())
         {
@@ -199,7 +208,6 @@ meshtastic_MeshPacket *SignalReplyModule::allocReply()
 #ifdef DEBUG_PORT
     auto req = *currentRequest;
     auto &p = req.decoded;
-    // The incoming message is in p.payload
     LOG_INFO("Received message from=0x%0x, id=%d, msg=%.*s", req.from, req.id, p.payload.size, p.payload.bytes);
 #endif
     screen->print("Send reply\n");

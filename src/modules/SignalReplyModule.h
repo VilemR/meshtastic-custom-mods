@@ -7,6 +7,7 @@ enum SIGNAL_REPLY_MODULE_COMMAND {
   SERVICE_PING_OFF,       // 1
   REQUEST_PING_REPLY,
   SERVICE_DISCOVERY,      // 2
+  SERVICE_GET_STATUS,
   SERVICE_LOC_ON,
   SERVICE_LOC_OFF,
   REQUEST_LOC_REPLY,
@@ -35,6 +36,8 @@ class SignalReplyModule : public SinglePortModule, public Observable<const mesht
 
     unsigned long EXPIRATION_TIME_MS = 1000 * 60 * 60 * 8; 
     //unsigned long EXPIRATION_TIME_MS = 1000 * 60; 
+
+    int HOP_LIMIT_OBSERVABLE = 3; // requests from more distant nodes to be not handled
 
     virtual meshtastic_MeshPacket *allocReply() override;
     virtual bool wantPacket(const meshtastic_MeshPacket *p) override;

@@ -54,6 +54,10 @@ SIGNAL_REPLY_MODULE_COMMAND SignalReplyModule::getCommand(const meshtastic_MeshP
     {
         return SERVICE_DISCOVERY;
     }
+    else if (strcasestr_custom(messageRequest, "status?") || strcasestr_custom(messageRequest, "stat?") != nullptr)
+    {
+        return SERVICE_GET_STATUS;
+    }
     else if (strcasestr_custom(messageRequest, "loc on") != nullptr)
     {
         return SERVICE_LOC_ON;
@@ -69,6 +73,15 @@ SIGNAL_REPLY_MODULE_COMMAND SignalReplyModule::getCommand(const meshtastic_MeshP
     return UNKNOWN_COMMAND;
 }
 
+int hopDistanceSinceSender(const meshtastic_MeshPacket &currentRequest){
+    //When receiving a packet, the difference between hop_start and hop_limit gives how many hops it traveled.
+    int hopLimit = currentRequest.hop_limit; // If unset treated as zero (no forwarding, send to direct neighbor nodes only) 
+                                             // if 1, allow hopping through one node, etc...
+                                             // For our usecase real world topologies probably have a max of about 3.
+    int hopStart = currentRequest.hop_start;
+    return hopStart - hopLimit;
+}
+
 const char* commandToString(SIGNAL_REPLY_MODULE_COMMAND command) {
     switch (command) {
         case SERVICE_PING_ON:
@@ -79,6 +92,8 @@ const char* commandToString(SIGNAL_REPLY_MODULE_COMMAND command) {
             return "REQUEST_PING_REPLY";
         case SERVICE_DISCOVERY:
             return "SERVICE_DISCOVERY";
+        case SERVICE_GET_STATUS:
+            return "SERVICE_GET_STATUS";    
         case SERVICE_LOC_ON:
             return "SERVICE_LOC_ON";
         case SERVICE_LOC_OFF:
@@ -96,11 +111,11 @@ void SignalReplyModule::reply(const meshtastic_MeshPacket &currentRequest, SIGNA
     if (currentRequest.from != 0x0 && currentRequest.from != nodeDB->getNodeNum())
     {
         LOG_INFO("SignalReplyModule::reply(): COMMAND %s.", commandToString(command));
-        int hopLimit = currentRequest.hop_limit;
-        int hopStart = currentRequest.hop_start;
+        //int hopLimit = currentRequest.hop_limit;
+        //int hopStart = currentRequest.hop_start;
         char idSender[10];
         char idReceipient[10];
-        int hopDistance = hopLimit - hopStart;
+        int hopDistance = hopDistanceSinceSender(currentRequest);
         snprintf(idSender, sizeof(idSender), "%d", currentRequest.from);
         snprintf(idReceipient, sizeof(idReceipient), "%d", nodeDB->getNodeNum());
         char messageReply[250];
@@ -109,8 +124,12 @@ void SignalReplyModule::reply(const meshtastic_MeshPacket &currentRequest, SIGNA
         meshtastic_NodeInfoLite *nodeReceiver = nodeDB->getMeshNode(nodeDB->getNodeNum());
         const char *nodeMeassuring = nodeReceiver->has_user ? nodeReceiver->user.short_name : idReceipient;
         if (command==SERVICE_DISCOVERY) {
-            snprintf(messageReply, sizeof(messageReply), "Available services : PING (ON/OFF), LOC (ON/OFF), FILTER, FORWARDER, BRIDGE, STAT");
+            snprintf(messageReply, sizeof(messageReply), "Available services : PING (ON/OFF), LOC (ON/OFF)");
+            reply->hop_limit = 3;
             //snprintf(messageReply, sizeof(messageReply), "Available services @%s: PING (ON/OFF), LOC (ON/OFF), FILTER, FORWARDER, BRIDGE, STAT (HOP %s)", nodeMeassuring,hopDistance);
+        }
+        else if (command==SERVICE_GET_STATUS){
+            snprintf(messageReply, sizeof(messageReply), "SERVICE STATUS : PING %d, LOC %d", pingServiceEnabled, locServiceEnabled);
         }
         else if (hopLimit != hopStart)
         {
@@ -159,10 +178,19 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
             pingServiceEnabled = 0;
             LOG_INFO("SignalReplyModule::handleReceived(): Ping service disabled.");
         }
-        else if (command == SERVICE_DISCOVERY)
+        else if (command == SERVICE_DISCOVERY || SERVICE_GET_STATUS))
         {
-            LOG_INFO("SignalReplyModule::handleReceived(): Service discovery requested.");
-            reply(currentRequest,command);
+            if (hopDistanceSinceSender(currentRequest) <= HOP_LIMIT_OBSERVABLE) {
+                LOG_INFO("SignalReplyModule::handleReceived(): Service discovery requested.");
+                reply(currentRequest,command); //HOP_LIMIT_OBSERVABLE
+            } else {
+                LOG_INFO("SignalReplyModule::handleReceived(): Service discovery requested (but ignored - too far away).");
+            }
+        }
+        else if (command == SERVICE_GET_STATUS && currentRequest.to == nodeDB->getNodeNum())
+        {
+                LOG_INFO("SignalReplyModule::handleReceived(): Service status requested.");
+                reply(currentRequest,command); 
         }
         else if (command == SERVICE_LOC_ON && currentRequest.to == nodeDB->getNodeNum())
         {

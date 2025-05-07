@@ -111,6 +111,8 @@ const char* commandToString(SIGNAL_REPLY_MODULE_COMMAND command) {
     }
 }
 
+// meshtastic_PortNum_RANGE_TEST_APP = 66,
+
 void SignalReplyModule::reply(const meshtastic_MeshPacket &currentRequest, SIGNAL_REPLY_MODULE_COMMAND command)
 {
     if (currentRequest.from != 0x0 && currentRequest.from != nodeDB->getNodeNum())

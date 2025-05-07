@@ -108,7 +108,7 @@ int32_t RangeTestModule::runOnce()
  */
 void RangeTestModuleRadio::sendPayload(NodeNum dest, bool wantReplies)
 {
-    meshtastic_MeshPacket *p = allocDataPacket();
+    meshtastic_MeshPacket *p = allocDataPacket(); // meshtastic_PortNum_RANGE_TEST_APP = 66,
 
     p->from = nodeDB->getNodeNum();
     // p->to = dest; //?? je videt ze FFFFF ale kde se to prirazuje, neni tu fallback?

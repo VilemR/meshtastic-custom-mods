@@ -216,7 +216,7 @@ bool RangeTestModuleRadio::appendFile(const meshtastic_MeshPacket &mp)
     auto &p = mp.decoded;
 
     meshtastic_NodeInfoLite *n = nodeDB->getMeshNode(getFrom(&mp));
-    /*
+    // /*
         LOG_DEBUG("-----------------------------------------");
         LOG_DEBUG("p.payload.bytes  \"%s\"", p.payload.bytes);
         LOG_DEBUG("p.payload.size   %d", p.payload.size);
@@ -236,7 +236,7 @@ bool RangeTestModuleRadio::appendFile(const meshtastic_MeshPacket &mp)
         LOG_DEBUG("gpsStatus->getHasLock()      %d", gpsStatus->getHasLock());
         LOG_DEBUG("gpsStatus->getDOP()          %d", gpsStatus->getDOP());
         LOG_DEBUG("-----------------------------------------");
-    */
+    // */
     concurrency::LockGuard g(spiLock);
     if (!FSBegin()) {
         LOG_DEBUG("An Error has occurred while mounting the filesystem");

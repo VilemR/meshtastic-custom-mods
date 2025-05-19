@@ -141,7 +141,7 @@ void SignalReplyModule::reply(const meshtastic_MeshPacket &currentRequest, SIGNA
         }
         else if (hopLimit != hopStart)
         {
-            snprintf(messageReply, sizeof(messageReply), "%s: RSSI/SNR cannot be determined due to indirect connection through %d nodes!", nodeRequesting, (hopDistance));
+            snprintf(messageReply, sizeof(messageReply), "%s: RSSI/SNR cannot be determined due to indirect connection through %d node(s)!", nodeRequesting, (hopDistance));
         }
         else
         {

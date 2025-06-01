@@ -1,17 +1,3 @@
-// source: https://github.com/CamFlyerCH/meshtastic-firmware-mod/blob/master/src/mesh/Router.cpp
-// by Jean-Marc Ulrich CamFlyerCH
-
-
-========================================================================
-MeshTypes.h
-
-// JM mod start
-/// Max hops allowed in known only mode, messages with a hop_start greater than this will be dropped
-#define HOP_LIMITER 3
-#define Do0HopTelemetry true
-// JM mod end
-========================================================================
-
 #include "Router.h"
 #include "Channels.h"
 #include "CryptoEngine.h"

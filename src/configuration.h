@@ -375,5 +375,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define HAS_SCREEN 0
 #endif
 
+static bool filtServiceEnabled = true;
+
 #include "DebugConfiguration.h"
 #include "RF95Configuration.h"

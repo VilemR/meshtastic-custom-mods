@@ -66,17 +66,6 @@ SIGNAL_REPLY_MODULE_COMMAND SignalReplyModule::getCommand(const meshtastic_MeshP
     {
         return SERVICE_LOC_OFF;
     }
-
-    else if (strcasestr_custom(messageRequest, "filt on") != nullptr)
-    {
-        return SERVICE_FILT_ON;
-    }
-    else if (strcasestr_custom(messageRequest, "filt off") != nullptr)
-    {
-        return SERVICE_FILT_OFF;
-    }
-
-
     else if (strcasestr_custom(messageRequest, "seq ") != nullptr)
     {
         return REQUEST_LOC_REPLY;
@@ -114,12 +103,6 @@ const char* commandToString(SIGNAL_REPLY_MODULE_COMMAND command) {
             return "SERVICE_LOC_ON";
         case SERVICE_LOC_OFF:
             return "SERVICE_LOC_OFF";
-
-        case SERVICE_FILT_ON:
-            return "SERVICE_FILT_ON";
-        case SERVICE_FILT_OFF:
-            return "SERVICE_FILT_OFF";
-
         case REQUEST_LOC_REPLY:
             return "REQUEST_LOC_REPLY";
         case UNKNOWN_COMMAND:
@@ -139,7 +122,7 @@ void SignalReplyModule::reply(const meshtastic_MeshPacket &currentRequest, SIGNA
         int hopStart = currentRequest.hop_start;
         char idSender[10];
         char idReceipient[10];
-        int hopReplyLimit = HOP_LIMIT_OBSERVABLE;
+        int hopReplyLimit = 5;
         int hopDistance = hopDistanceSinceSender(currentRequest);
         snprintf(idSender, sizeof(idSender), "%d", currentRequest.from);
         snprintf(idReceipient, sizeof(idReceipient), "%d", nodeDB->getNodeNum());
@@ -235,12 +218,12 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
 
         else if (command == SERVICE_FILT_ON && currentRequest.to == nodeDB->getNodeNum())
         {
-            filtServiceEnabled = true;
+            filtServiceEnabled = 1;
             LOG_INFO("SignalReplyModule::handleReceived(): Filter service enabled.");
         }
         else if (command == SERVICE_FILT_OFF && currentRequest.to == nodeDB->getNodeNum())
         {
-            filtServiceEnabled = false;
+            filtServiceEnabled = 0;
             LOG_INFO("SignalReplyModule::handleReceived(): Filter service disabled - no packet filtering.");
         }
 

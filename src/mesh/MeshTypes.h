@@ -19,6 +19,13 @@ typedef uint32_t PacketId; // A packet sequence number
 #define ERRNO_SHOULD_RELEASE 35            // no error, but the packet should still be released
 #define ID_COUNTER_MASK (UINT32_MAX >> 22) // mask to select the counter portion of the ID
 
+// JM mod start
+/// Max hops allowed in known only mode, messages with a hop_start greater than this will be dropped
+#define HOP_LIMITER 5
+#define Do0HopTelemetry true
+// JM mod end
+
+
 /*
  * Source of a received message
  */

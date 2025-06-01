@@ -29,6 +29,8 @@ class Router : protected concurrency::OSThread, protected PacketHistory
      */
     Router();
 
+    String getPortNumName(meshtastic_PortNum portnum);
+
     /**
      * Currently we only allow one interface, that may change in the future
      */
@@ -154,6 +156,8 @@ DecodeState perhapsDecode(meshtastic_MeshPacket *p);
 meshtastic_Routing_Error perhapsEncode(meshtastic_MeshPacket *p);
 
 extern Router *router;
+
+
 
 /// Generate a unique packet id
 // FIXME, move this someplace better

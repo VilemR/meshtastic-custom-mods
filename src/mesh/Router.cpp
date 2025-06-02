@@ -878,7 +878,10 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
 
         // 0 hop telemetry and similar messages should not be rebroadcasted
         if (filtServiceEnabled == true &&
-            (config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_LOCAL_ONLY || config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_KNOWN_ONLY || config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_ALL_SKIP_DECODING) &&
+            (   config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_LOCAL_ONLY || 
+                config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_KNOWN_ONLY ||
+                config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_ALL || 
+                config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_ALL_SKIP_DECODING) &&
             p->which_payload_variant == meshtastic_MeshPacket_decoded_tag &&
             !sendcanceled &&
             Do0HopTelemetry &&

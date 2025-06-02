@@ -830,7 +830,9 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
         // LOG_INFO("JM Mod: Message type %d from !%x to !%x and a hop_start of %d and a hop_limit of %d on channel hash %x", p->decoded.portnum, p->from, p->to, p->hop_start, p->hop_limit, p->channel);
         // LOG_INFO("FILTER TXDATA #%d F:!%x T:!%x CH:%x - default channel & ignored port => (hop=0)", p->decoded.portnum, p->from, p->to, p->channel);
         // LOG_INFO("FILTER INPUT RXDATA: %s F:!%x T:!%x HS:%d HL:%d CH:%x", getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_start, p->hop_limit, p->channel);
+        
         bool sendcanceled = false;
+        
         if (filtServiceEnabled == true &&
             p->hop_start > HOP_LIMITER &&
             (config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_LOCAL_ONLY || config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_KNOWN_ONLY || config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_ALL_SKIP_DECODING))
@@ -889,7 +891,7 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
                       meshtastic_PortNum_ATAK_PLUGIN,
                       // meshtastic_PortNum_POSITION_APP,
                       // meshtastic_PortNum_NODEINFO_APP,
-                      meshtastic_PortNum_ROUTING_APP,
+                      // meshtastic_PortNum_ROUTING_APP,
                       meshtastic_PortNum_WAYPOINT_APP,
                       meshtastic_PortNum_ALERT_APP,
                       meshtastic_PortNum_REPLY_APP,
@@ -905,8 +907,8 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
                       meshtastic_PortNum_PRIVATE_APP,
                       meshtastic_PortNum_DETECTION_SENSOR_APP,
                       meshtastic_PortNum_REMOTE_HARDWARE_APP,
-                      meshtastic_PortNum_TELEMETRY_APP
-                      //  meshtastic_PortNum_RANGE_TEST_APP,
+                      meshtastic_PortNum_TELEMETRY_APP,
+                      meshtastic_PortNum_RANGE_TEST_APP
                       //  meshtastic_PortNum_NEIGHBORINFO_APP viz nize
                       ))
         {
@@ -917,8 +919,9 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
                 LOG_WARN("RXDATA: #%s %x -> %x HOP:%d/%d (CH:%x) - Drop packet (system or overhead traffic)!", getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel);
                 cancelSending(p->from, p->id);
                 sendcanceled = true;
+                skipHandle = true;
             }
-            // skipHandle = true;
+            
         }
 
         if (filtServiceEnabled == true &&

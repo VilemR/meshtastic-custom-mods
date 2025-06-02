@@ -376,6 +376,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 static bool filtServiceEnabled = true;
+static float filtPositionAndNodeInfoRatio = 0.1;
 
 #include "DebugConfiguration.h"
 #include "RF95Configuration.h"

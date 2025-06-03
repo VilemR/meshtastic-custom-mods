@@ -1,9 +1,28 @@
 # CUSTOM MESHTASTIC MODS
 This is an experimental set of custom, purpose-built modifications to the official Meshtastic firmware, designed to **help advanced users fine-tune their Meshtastic networks**.
 
-- default channel for all (if direct then redistributed) is skipping but special prak channel is redistributed
-
 There is no guarantee of stability or full functionality. This is an early proof-of-concept release intended to explore potential responses to future challenges that may arise as Meshtastic networks grow in size and complexity.
+
+The development of this experimental Meshtastic firmware modification is based on the assumption that growing clusters of Meshtastic users will eventually want to communicate with users in neighboring clusters. Recent experiments have shown that, as these clusters expand, high network utilization is required to support communication beyond the local group—resembling a 'relay site' function. 
+
+This project is a response to the negative impact on network performance caused by interconnected Meshtastic clusters. When clusters are linked, internal traffic—such as frequent nodeinfo updates, telemetry, and routing data—tends to propagate to all connected clusters, leading to unnecessary network load.
+
+To address this, the firmware modification slows down or completely blocks the forwarding of non-essential packets to neighboring clusters.
+
+When a node running this modified firmware is strategically placed between two clusters, it can act as a slingshot for core Meshtastic traffic—delivering only the crucial packet types needed for cross-cluster communication.
+
+Instead of flooding neighboring clusters with traffic no one needs, the node forwards only essential messages such as text messages and admin configuration packets. It limits the spread of less critical traffic—like nodeinfo or routing updates—to perhaps once per day, and drops all other non-essential packets.
+
+By default, this node filters out unnecessary Meshtastic traffic to reduce network congestion between clusters.
+
+For testing purposes, the filter can be temporarily disabled by sending the direct command FILT OFF to the node. The filter will automatically re-enable after approximately one hour, once the node database is refreshed. This allows for before-and-after comparisons of the filtering effect.
+
+When the filter is enabled, the node reduces or drops non-essential packets, such as frequent nodeinfo broadcasts or telemetry.
+
+In contrast, direct text messages sent to the slingshot node using a specific non-default channel are rebroadcast to all reachable nodes across connected clusters. This selective forwarding ensures that only intended messages are propagated beyond the local cluster.
+
+A non-default channel is used intentionally, so that only users who know the correct pre-shared key (PSK) can access the slingshot functionality. Users without the correct PSK will not be able to send cross-cluster messages.
+
 
 It includes a new **SignalReplyModule**, which allows for automated replies to received "Ping" messages. The response can either include RSSI/SNR signal quality (useful for evaluating link performance) or the number of hops the message took to reach the replying node.
 
@@ -12,13 +31,12 @@ Additionally, a modified **Range Test Module** extends the standard "loc" messag
 The most recent release also includes a **modification to the Router class** that reduces airtime usage by dropping non-core Meshtastic packets. This helps prevent excessive load on exposed nodes that serve as relays in large networks. The filtering implementation is based on the pioneering work of CamFlyerCH (Jean-Marc Ulrich). 
 
 **All features can be controlled remotely.** The current version supports the following commands (case insensitive):
- 
 
  - **Services? / Serv?** – Requests a list of services installed on the remote node. The node responds to this command whether it is sent directly or broadcast on the general channel.
  - Status? / Stat? – Requests the status of services on a remote node running this modified firmware. It shows which services are active or inactive. Responds only to direct messages sent to the remote node; broadcast or indirect messages are ignored.
- - **Ping ON/OFF** – Enables or disables the service that replies to incoming "Ping" requests.Responds only to direct messages sent to the remote node; broadcast or indirect messages are ignored.
- - **Ping** – Sends a ping request. The response includes either signal quality (RSSI/SNR) or the number of hops it took to reach the responding node.Responds only to direct messages sent to the remote node; broadcast or indirect messages are ignored.
- - **LOC ON/OFF** – Enables or disables the extended "LOC" response, which includes a Google Maps link to the reported location.Responds only to direct messages sent to the remote node; broadcast or indirect messages are ignored.
+ - **Ping ON/OFF** – Enables or disables the service that replies to incoming "Ping" requests. Responds only to direct messages sent to the remote node; broadcast or indirect messages are ignored.
+ - **Ping** – Sends a ping request. The response (if ping service is enabled) includes either signal quality (RSSI/SNR) or the number of hops it took to reach the responding node. Responds only to direct messages sent to the remote node.
+ - **LOC ON/OFF** – Enables or disables the extended "LOC" response, which includes a Google Maps link to the reported location. Responds only to direct messages sent to the remote node.
  - **FILT ON/OFF** – Enables (ON) or disables (OFF, default Meshtastic routing behavior) a custom packet filter implemented in Router.cpp. When enabled, all incoming Meshtastic packet types (PORTNUM) are received and processed locally. However, only core Meshtastic packets are relayed further. Less critical packets (system or overhead traffic) — such as telemetry, ATAK, or unknown types—are either delayed or dropped entirely.
 
-This feature is intended for strategically placed nodes exposed to a high volume of traffic. By reducing unnecessary packet forwarding, it helps minimize spectrum congestion and prevents network overload or collapse. On the other hand, this filter guarantees that the core functionality of the Meshtastic network remains fully operational — ensuring neighbor node awareness and unrestricted text message forwarding between nodes.
+This feature is intended for strategically placed nodes exposed to a high volume of traffic. By reducing unnecessary packet forwarding, it helps minimize spectrum congestion and prevents network overload or collapse. On the other hand, this filter guarantees that the core functionality of the Meshtastic network remains fully operational — ensuring neighbor node awareness and unrestricted text message forwarding between nodes. This firmware is non-intrusive to the Meshtastic network. It only processes packets intended for forwarding beyond your local cluster of nodes.

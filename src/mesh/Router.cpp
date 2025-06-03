@@ -22,6 +22,8 @@
 #include "serialization/MeshPacketSerializer.h"
 #endif
 
+// Modification to filter non-core packets inspired/based on https://github.com/CamFlyerCH/meshtastic-firmware-mod by CamFlyerCH
+
 #define MAX_RX_FROMRADIO \
     4 // max number of packets destined to our queue, we dispatch packets quickly so it doesn't need to be big
 
@@ -912,7 +914,6 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
                       //  meshtastic_PortNum_NEIGHBORINFO_APP viz nize
                       ))
         {
-            // LOG_WARN("JM Mod: Don't retransmit message with portnum %s from !%x", getPortNumName(p->decoded.portnum), p->from);
             if (!sendcanceled)
             {
 
@@ -921,7 +922,6 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
                 sendcanceled = true;
                 skipHandle = true;
             }
-            
         }
 
         if (filtServiceEnabled == true &&
@@ -938,12 +938,11 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
         {
             if (!sendcanceled && getRandomFloat(0, 1) <= filtPositionAndNodeInfoRatio)
             {
-
                 LOG_WARN("RXDATA: #%s %x -> %x HOP:%d/%d (CH:%x) - Drop packet (Location/NodeInfo suppression %.2f%%)!", getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel, filtPositionAndNodeInfoRatio * 100);
                 cancelSending(p->from, p->id);
                 sendcanceled = true;
             }
-            // skipHandle = true;
+            skipHandle = true;
         }
 
         // Neighbor info module is disabled, ignore expensive neighbor info packets

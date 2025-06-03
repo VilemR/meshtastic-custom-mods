@@ -23,7 +23,7 @@ class SignalReplyModule : public SinglePortModule, public Observable<const mesht
     /** Constructor
      * name is for debugging output
      */
-    SignalReplyModule() : SinglePortModule("XXXXMod", meshtastic_PortNum_TEXT_MESSAGE_APP) {}
+    SignalReplyModule() : SinglePortModule("SinglePortModule", meshtastic_PortNum_TEXT_MESSAGE_APP) {}
 
   //virtual ~SignalReplyModule() {}
 
@@ -38,9 +38,7 @@ class SignalReplyModule : public SinglePortModule, public Observable<const mesht
     unsigned long activationLocTime = 0;
 
     unsigned long EXPIRATION_TIME_MS = 1000 * 60 * 60 * 8; 
-    //unsigned long EXPIRATION_TIME_MS = 1000 * 60; 
-
-    int HOP_LIMIT_OBSERVABLE = 3; // requests from more distant nodes to be not handled
+    int HOP_LIMIT_OBSERVABLE = 4; // requests from more distant nodes to be not handled
 
     virtual meshtastic_MeshPacket *allocReply() override;
     virtual bool wantPacket(const meshtastic_MeshPacket *p) override;

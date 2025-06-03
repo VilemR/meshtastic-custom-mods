@@ -1,29 +1,17 @@
 # CUSTOM MESHTASTIC MODS
-This is an experimental set of custom, purpose-built modifications to the official Meshtastic firmware, designed to **help advanced users fine-tune their Meshtastic networks**.
+This is an experimental set of custom, purpose-built modifications to the official Meshtastic firmware, designed to **help advanced users fine-tune their Meshtastic networks**. There is no guarantee of stability or full functionality. This is an early proof-of-concept release intended to explore potential responses to future challenges that may arise as Meshtastic networks grow in size and complexity.
 
-There is no guarantee of stability or full functionality. This is an early proof-of-concept release intended to explore potential responses to future challenges that may arise as Meshtastic networks grow in size and complexity.
+## Initial intention
+The development of this experimental Meshtastic firmware modification is based on the assumption that growing clusters of Meshtastic users will eventually want to communicate with users in neighboring clusters. Recent experiments have shown that, as these clusters expand, high network utilization is required to support communication beyond the local group—resembling a 'relay site' function. This project is a response to the potential negative impact on network performance caused by interconnected Meshtastic clusters. When clusters are linked, internal traffic—such as frequent nodeinfo updates, telemetry, and routing data—tends to propagate to all connected clusters, leading to unnecessary network load.
 
-The development of this experimental Meshtastic firmware modification is based on the assumption that growing clusters of Meshtastic users will eventually want to communicate with users in neighboring clusters. Recent experiments have shown that, as these clusters expand, high network utilization is required to support communication beyond the local group—resembling a 'relay site' function. 
+To address this, the firmware modification slows down or completely blocks the forwarding of non-essential packets to neighboring clusters. When a node running this modified firmware is strategically placed between two clusters, it can act as well as a slingshot for core Meshtastic traffic—delivering only the crucial packet types needed for cross-cluster communication. Instead of flooding neighboring clusters with traffic no one needs, the node forwards only essential messages such as text messages and admin configuration packets. It limits the spread of less critical traffic—like nodeinfo or routing updates—to perhaps once per day, and drops all other non-essential packets.
 
-This project is a response to the negative impact on network performance caused by interconnected Meshtastic clusters. When clusters are linked, internal traffic—such as frequent nodeinfo updates, telemetry, and routing data—tends to propagate to all connected clusters, leading to unnecessary network load.
+## How it works
+By default, this node filters out unnecessary Meshtastic traffic to reduce network congestion between clusters. For testing purposes, the filter can be temporarily disabled by sending the direct command FILT OFF to the node. The filter will automatically re-enable after approximately one hour, once the node database is refreshed. This allows for before-and-after comparisons of the filtering effect.
 
-To address this, the firmware modification slows down or completely blocks the forwarding of non-essential packets to neighboring clusters.
+When the filter is enabled, the node reduces or drops non-essential packets, such as frequent nodeinfo broadcasts or telemetry. In contrast, direct text messages sent to the slingshot node using a specific non-default channel are rebroadcast to all reachable nodes across connected clusters. This selective forwarding ensures that only intended messages are propagated beyond the local cluster. A non-default channel is used intentionally, so that only users who know the correct pre-shared key (PSK) can access the slingshot functionality. Users without the correct PSK will not be able to send cross-cluster messages.
 
-When a node running this modified firmware is strategically placed between two clusters, it can act as a slingshot for core Meshtastic traffic—delivering only the crucial packet types needed for cross-cluster communication.
-
-Instead of flooding neighboring clusters with traffic no one needs, the node forwards only essential messages such as text messages and admin configuration packets. It limits the spread of less critical traffic—like nodeinfo or routing updates—to perhaps once per day, and drops all other non-essential packets.
-
-By default, this node filters out unnecessary Meshtastic traffic to reduce network congestion between clusters.
-
-For testing purposes, the filter can be temporarily disabled by sending the direct command FILT OFF to the node. The filter will automatically re-enable after approximately one hour, once the node database is refreshed. This allows for before-and-after comparisons of the filtering effect.
-
-When the filter is enabled, the node reduces or drops non-essential packets, such as frequent nodeinfo broadcasts or telemetry.
-
-In contrast, direct text messages sent to the slingshot node using a specific non-default channel are rebroadcast to all reachable nodes across connected clusters. This selective forwarding ensures that only intended messages are propagated beyond the local cluster.
-
-A non-default channel is used intentionally, so that only users who know the correct pre-shared key (PSK) can access the slingshot functionality. Users without the correct PSK will not be able to send cross-cluster messages.
-
-
+## Custom modifications
 It includes a new **SignalReplyModule**, which allows for automated replies to received "Ping" messages. The response can either include RSSI/SNR signal quality (useful for evaluating link performance) or the number of hops the message took to reach the replying node.
 
 Additionally, a modified **Range Test Module** extends the standard "loc" message by including a Google Maps link, making it easier to identify the origin of the tested location.

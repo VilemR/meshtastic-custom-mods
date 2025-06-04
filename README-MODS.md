@@ -1,19 +1,30 @@
-# CUSTOM MESHTASTIC MODS
+## MESHTASTIC PACKET SLINGSHOT AND TRAFFIC OVERHEAD REDUCER
+
 This is an experimental set of custom, purpose-built modifications to the official Meshtastic firmware, designed to **help advanced users fine-tune their Meshtastic networks**. There is no guarantee of stability or full functionality. This is an early proof-of-concept release intended to explore potential responses to future challenges that may arise as Meshtastic networks grow in size and complexity.
 
-## Initial intention
+### Initial intention
 The development of this experimental Meshtastic firmware modification is based on the assumption that growing clusters of Meshtastic users will eventually want to communicate with users in neighboring clusters. Recent experiments have shown that, as these clusters expand, high network utilization is required to support communication beyond the local group—resembling a 'relay site' function. **This project is a response to the potential negative impact on network performance caused by interconnected Meshtastic clusters**. When clusters are linked, internal traffic—such as frequent nodeinfo updates, telemetry, and routing data—tends to propagate to all connected clusters, leading to unnecessary network load.
 
 To address this, the firmware modification slows down or completely blocks the forwarding of non-essential packets to neighboring clusters. When a node running this modified firmware is strategically placed between two clusters, it can act as well as a **slingshot for core Meshtastic traffic—delivering only the crucial packet types needed for cross-cluster communication**. Instead of flooding neighboring clusters with traffic no one needs, the node forwards only essential messages such as text messages and admin configuration packets. It limits the spread of less critical traffic—like nodeinfo or routing updates—to perhaps once per day, and drops all other non-essential packets.
 
 On top of the slingshot functionality, this firmware modification includes **two extra features** to help monitor signal quality and network coverage: Ping Command – Allows users to send ping messages to other nodes, which return signal quality metrics (e.g., RSSI and SNR). This is useful for quick diagnostics and verifying connectivity across nodes/clusters. Extended Range Test Module – Enhances the existing Range Test functionality by including location updates with each test result. These updates include a direct link to Google Maps, making it easy to view the exact GPS location where the test was performed.
 
-## How it works
+### What it is not
+Firmware meant to resolve everything. Prior your experiments ensure you are aware and you have applied basic tricks and applied best practise solution to common problems we all have fased. Beside various sources check and have all knowledge in mind consolidated into a few blog posts:
+
+- [Wrap up of one year experinece](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/01/kapitola-1-po-jednom-roce.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
+- [MediumFast vs LongFast and other hints](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/01/meshtastic-moznost-soucasne-existence.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
+- [Recommended settings for beginners](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/01/meshtastic-manifest-draft.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
+- [Cheatsheet how to compile your own firmare](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/02/meshtastic-kompilace-vlastniho-firmware.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
+- [How to pick right antenna](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/02/meshtastic-ja-vybrat-antenu.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
+- [Basic troubleshooting](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/02/meshtastic-zakladni-troubleshooting.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
+
+### How it works
 By default, this node filters out unnecessary Meshtastic traffic to reduce network congestion between clusters. For testing purposes, the filter can be temporarily disabled by sending the direct command FILT OFF to the node. The filter will automatically re-enable after approximately one hour, once the node database is refreshed. This allows for before-and-after comparisons of the filtering effect.
 
 When the filter is enabled, the node reduces or drops non-essential packets, such as frequent nodeinfo broadcasts or telemetry. In contrast, direct text messages sent to the slingshot node using a specific non-default channel are rebroadcast to all reachable nodes across connected clusters. This selective forwarding ensures that only intended messages are propagated beyond the local cluster. A non-default channel is used intentionally, so that only users who know the correct pre-shared key (PSK) can access the slingshot functionality. Users without the correct PSK will not be able to send cross-cluster messages.
 
-## Custom modifications
+### Custom modifications
 It includes a new **SignalReplyModule**, which allows for automated replies to received "Ping" messages. The response can either include RSSI/SNR signal quality (useful for evaluating link performance) or the number of hops the message took to reach the replying node.
 
 Additionally, a modified **Range Test Module** extends the standard "loc" message by including a Google Maps link, making it easier to identify the origin of the tested location.
@@ -23,7 +34,7 @@ The most recent release also includes a **modification to the Router class** tha
 **All features can be controlled remotely.** The current version supports the following commands (case insensitive):
 
  - **Services? / Serv?** – Requests a list of services installed on the remote node. The node responds to this command whether it is sent directly or broadcast on the general channel.
- - Status? / Stat? – Requests the status of services on a remote node running this modified firmware. It shows which services are active or inactive. Responds only to direct messages sent to the remote node; broadcast or indirect messages are ignored.
+ - **Status? / Stat?** – Requests the status of services on a remote node running this modified firmware. It shows which services are active or inactive. Responds only to direct messages sent to the remote node; broadcast or indirect messages are ignored.
  - **Ping ON/OFF** – Enables or disables the service that replies to incoming "Ping" requests. Responds only to direct messages sent to the remote node; broadcast or indirect messages are ignored.
  - **Ping** – Sends a ping request. The response (if ping service is enabled) includes either signal quality (RSSI/SNR) or the number of hops it took to reach the responding node. Responds only to direct messages sent to the remote node.
  - **LOC ON/OFF** – Enables or disables the extended "LOC" response, which includes a Google Maps link to the reported location. Responds only to direct messages sent to the remote node.

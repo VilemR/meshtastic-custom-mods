@@ -47,16 +47,17 @@ The most recent release also includes a **modification to the Router class** tha
  - **Ping** – Sends a ping request. The response (if ping service is enabled) includes either signal quality (RSSI/SNR) or the number of hops it took to reach the responding node. Responds only to direct messages sent to the remote node. It remains active for approximately 60 minutes before expiring and automatically disabling itself.
  - **LOC ON/OFF** – Enables or disables the extended "LOC" response, which includes a Google Maps link to the reported location. Responds only to direct messages sent to the remote node. It remains active for approximately 60 minutes before expiring and automatically disabling itself.
  - **FILT ON/OFF** – Enables (ON) or disables (OFF) a custom packet filter implemented in Router.cpp. When enabled, all incoming Meshtastic packet types (PORTNUM) are received and processed locally. However, only core Meshtastic packets are relayed further. Less critical packets (system or overhead traffic) — such as telemetry, ATAK, or unknown types—are either delayed or dropped entirely. **When the filter is disabled, the device reverts to standard Meshtastic routing behavior.**
+ - **HOP ON/OFF** – Enables (ON) or disables (OFF) the reduction of the HOP value in routed packets if it exceeds a reasonable threshold of 5. When enabled, packets with a HOP value greater than 5 will have it reduced accordingly to limit their time-to-live, helping to prevent excessive propagation and reduce unnecessary network traffic (still under development and testing).
 
  By default, the FILTER service is intentionally enabled, while all other services are disabled. If you enable any service other than FILTER, it will remain active for approximately 60 minutes before automatically disabling itself, requiring manual re-enabling. If you disable filtering using the FILT OFF command, the FILTER service will stay disabled until either the FILT ON command is issued or the device is rebooted. 
 
 ## How to start using SLING-SHOT feature.
 There are two intended scenarios for slingshotting packets to another cluster without cluttering your local cluster. New use cases may be introduced, or existing ones adjusted in the future, to improve user experience and overall network performance.
 
-**Inter-cluster Communication via Dedicated Channel**
-Communication with users in a different cluster should be done through a dedicated channel specifically created for this purpose. It is recommended to use a pre-shared key (PSK) shared among users permitted to access this feature in both clusters.
+#### Inter-cluster Communication via Dedicated Channel
+Communication with users in a different cluster should be done through a dedicated channel specifically created for this purpose. It is recommended to use a pre-shared key (PSK) shared among **users permitted to access this feature in both clusters**.
 
-**Message Forwarding from Default Channel (Feature on Hold)**
-Messages sent to this node on the default channel—when addressed directly to this node—can be rebroadcast to all reachable nodes, including those in both the local and remote clusters.
+#### Message Forwarding from Default Channel (Feature on Hold)
+Messages sent to this node on the default channel—when addressed directly to this node—can be **rebroadcast to all reachable nodes, including those in both the local and remote clusters**.
 Note: This feature is currently on hold!
 

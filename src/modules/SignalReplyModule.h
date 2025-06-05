@@ -40,7 +40,7 @@ class SignalReplyModule : public SinglePortModule, public Observable<const mesht
     unsigned long activationPingTime = 0;
     unsigned long activationLocTime = 0;
 
-    unsigned long EXPIRATION_TIME_MS = 1000 * 60 * 60 * 8; 
+    unsigned long EXPIRATION_TIME_MS = 1000 * 60 * 60 * 1; // 1 hour
     int HOP_LIMIT_OBSERVABLE = 4; // requests from more distant nodes to be not handled
 
     virtual meshtastic_MeshPacket *allocReply() override;

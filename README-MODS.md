@@ -2,6 +2,12 @@
 
 This is an experimental set of custom, purpose-built modifications to the official Meshtastic firmware, designed to **help advanced users fine-tune their Meshtastic networks**. There is no guarantee of stability or full functionality. This is an early proof-of-concept release intended to explore potential responses to future challenges that may arise as Meshtastic networks grow in size and complexity.
 
+### How to Compile and Install Your Custom Firmware
+If you're serious about custom modifications, you should consider using VSCode with PlatformIO. However, for the rest of us, the easiest way is to use a simple online development environment like Gitpod.com. I’ve described the process briefly in this blog post:
+[MESHTASTIC – Compiling Your Own Firmware](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/02/meshtastic-kompilace-vlastniho-firmware.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp). If you want to compile this custom modification (instead of just the basic “Ping” mod which is ncluded as well), you can use this Gitpod link to get started right away:
+
+https://gitpod.io#https://github.com/VilemR/meshtastic-custom-mods.git
+
 ### Initial intention
 The development of this experimental Meshtastic firmware modification is based on the assumption that growing clusters of Meshtastic users will eventually want to communicate with users in neighboring clusters. Recent experiments have shown that, as these clusters expand, high network utilization is required to support communication beyond the local group—resembling a 'relay site' function. **This project is a response to the potential negative impact on network performance caused by interconnected Meshtastic clusters**. When clusters are linked, internal traffic—such as frequent nodeinfo updates, telemetry, and routing data—tends to propagate to all connected clusters, leading to unnecessary network load.
 
@@ -10,14 +16,14 @@ To address this, the firmware modification slows down or completely blocks the f
 On top of the slingshot functionality, this firmware modification includes **two extra features** to help monitor signal quality and network coverage: Ping Command – Allows users to send ping messages to other nodes, which return signal quality metrics (e.g., RSSI and SNR). This is useful for quick diagnostics and verifying connectivity across nodes/clusters. Extended Range Test Module – Enhances the existing Range Test functionality by including location updates with each test result. These updates include a direct link to Google Maps, making it easy to view the exact GPS location where the test was performed.
 
 ### What it is not
-Firmware meant to resolve everything. Prior your experiments ensure you are aware and you have applied basic tricks and applied best practise solution to common problems we all have fased. Beside various sources check and have all knowledge in mind consolidated into a few blog posts:
+This is not a firmware meant to solve everything for you. Before starting your experiments, make sure you are familiar with the basics and have applied common best practices to avoid issues many of us have encountered. In addition to gathering information from various sources, try to consolidate your knowledge by reading a few focused blog posts:
 
-- [Wrap up of one year experinece](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/01/kapitola-1-po-jednom-roce.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
-- [MediumFast vs LongFast and other hints](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/01/meshtastic-moznost-soucasne-existence.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
-- [Recommended settings for beginners](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/01/meshtastic-manifest-draft.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
-- [Cheatsheet how to compile your own firmare](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/02/meshtastic-kompilace-vlastniho-firmware.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
-- [How to pick right antenna](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/02/meshtastic-ja-vybrat-antenu.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
-- [Basic troubleshooting](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/02/meshtastic-zakladni-troubleshooting.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
+- [A Wrap-up of One Year of Experience](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/01/kapitola-1-po-jednom-roce.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
+- [MediumFast vs LongFast and Other Useful Hints](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/01/meshtastic-moznost-soucasne-existence.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
+- [Recommended Settings for Beginners](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/01/meshtastic-manifest-draft.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
+- [Cheatsheet: How to Compile Your Own Firmware](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/02/meshtastic-kompilace-vlastniho-firmware.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
+- [How to Pick the Right Antenna](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/02/meshtastic-ja-vybrat-antenu.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
+- [Basic Troubleshooting](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/02/meshtastic-zakladni-troubleshooting.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
 
 ### How it works
 By default, this node filters out unnecessary Meshtastic traffic to reduce network congestion between clusters. For testing purposes, the filter can be temporarily disabled by sending the direct command FILT OFF to the node. The filter will automatically re-enable after approximately one hour, once the node database is refreshed. This allows for before-and-after comparisons of the filtering effect.
@@ -41,3 +47,4 @@ The most recent release also includes a **modification to the Router class** tha
  - **FILT ON/OFF** – Enables (ON) or disables (OFF, default Meshtastic routing behavior) a custom packet filter implemented in Router.cpp. When enabled, all incoming Meshtastic packet types (PORTNUM) are received and processed locally. However, only core Meshtastic packets are relayed further. Less critical packets (system or overhead traffic) — such as telemetry, ATAK, or unknown types—are either delayed or dropped entirely.
 
 This feature is intended for strategically placed nodes exposed to a high volume of traffic. By reducing unnecessary packet forwarding, it helps minimize spectrum congestion and prevents network overload or collapse. On the other hand, this filter guarantees that the core functionality of the Meshtastic network remains fully operational — ensuring neighbor node awareness and unrestricted text message forwarding between nodes. This firmware is non-intrusive to the Meshtastic network. It only processes packets intended for forwarding beyond your local cluster of nodes.
+

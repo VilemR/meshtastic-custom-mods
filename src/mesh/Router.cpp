@@ -276,8 +276,10 @@ ErrorCode Router::send(meshtastic_MeshPacket *p)
         }
     }
 
-    // LOG_INFO("TXDATA Input : #%s %x -> %x HOP:%d/%d (CH:%x)", getPortNumName(p->decoded.portnum), p->from, p->to,  p->hop_limit, p->hop_start, p->channel);
-    if (isFromUs(p) && channels.isDefaultChannel(p->channel) && Do0HopTelemetry &&
+    // Reduce traffic - this is non-message packet default channel and from our node 
+    // therefore => set hop limit to 0 (for direct nodes only with no HOPs)
+    // Toto se opakuje - viz SendLocal, ale tady je to pro jistotu
+    if (isFromUs(p) && channels.isDefaultChannel(p->channel) && // Do0HopTelemetry &&
         filtServiceEnabled == true &&
         (p->decoded.portnum == meshtastic_PortNum_AUDIO_APP ||            //   9
          p->decoded.portnum == meshtastic_PortNum_DETECTION_SENSOR_APP || //  10
@@ -288,7 +290,6 @@ ErrorCode Router::send(meshtastic_MeshPacket *p)
          p->decoded.portnum == meshtastic_PortNum_NEIGHBORINFO_APP ||     //  71
          p->decoded.portnum == meshtastic_PortNum_POWERSTRESS_APP ||      //  74
          p->decoded.portnum == meshtastic_PortNum_PRIVATE_APP
-         // p->decoded.portnum == meshtastic_PortNum_RANGE_TEST_APP ||          //  66
          ))
     {
         p->hop_limit = 0;
@@ -828,30 +829,21 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
         else
             printPacket("handleReceived(REMOTE)", p);
 
-        // JM mod start FILTER RXDATA
-        // LOG_INFO("JM Mod: Message type %d from !%x to !%x and a hop_start of %d and a hop_limit of %d on channel hash %x", p->decoded.portnum, p->from, p->to, p->hop_start, p->hop_limit, p->channel);
-        // LOG_INFO("FILTER TXDATA #%d F:!%x T:!%x CH:%x - default channel & ignored port => (hop=0)", p->decoded.portnum, p->from, p->to, p->channel);
-        // LOG_INFO("FILTER INPUT RXDATA: %s F:!%x T:!%x HS:%d HL:%d CH:%x", getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_start, p->hop_limit, p->channel);
         
         bool sendcanceled = false;
         
-        if (filtServiceEnabled == true &&
-            p->hop_start > HOP_LIMITER &&
-            (config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_LOCAL_ONLY || config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_KNOWN_ONLY || config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_ALL_SKIP_DECODING))
+        if (filtServiceEnabled == true )
         {
             if (!isToUs(p))
             {
-                // Try to find a known channel and check if it is not the default channel
                 ChannelIndex chIndex = 0;
                 bool unkwnownChannel = true;
                 for (chIndex = 0; chIndex < channels.getNumChannels(); chIndex++)
                 {
-                    // LOG_INFO("JM Mod: Test channel index %d for hash %d", chIndex, p->channel);
                     if (chIndex == p->channel)
                     {
                         if (channels.isDefaultChannel(chIndex))
                         {
-                            // LOG_WARN("FILTER RXDATA: Drop message DefaultChannel from !%x with hop_start of %d (> than %d)! (Node is in LOCAL or KNOWN ONLY mode. Message is not for us on default channel.)", p->from, p->hop_start, HOP_RELIABLE);
                             LOG_WARN("RXDATA: #%s %x -> %x HOP:%d/%d (CH:%x) - Drop packet (DefaulChannel not for us)!", getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel);
                             cancelSending(p->from, p->id);
                             sendcanceled = true;
@@ -860,14 +852,12 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
                         }
                         else
                         {
-                            // LOG_INFO("FILTER RXDATA keep packet: Message received on known non-default channel %d from !%x to !%x and a hop_start of %d and a hop_limit of %d, but we keep it.", chIndex, p->from, p->to, p->hop_start, p->hop_limit);
                             unkwnownChannel = false;
                         }
                     }
                 }
                 if (unkwnownChannel)
                 {
-                    // LOG_WARN("FILTER RXDATA: Drop message UKNOWN CHANNEL from !%x with hop_start of %d (> than %d)! (Message is on unknown channel hash %d. Node is in LOCAL or KNOWN ONLY mode.)", p->from, p->hop_start, HOP_RELIABLE, p->channel);
                     if (!sendcanceled)
                     {
                         LOG_WARN("RXDATA: #%s %x -> %x HOP:%d/%d (CH:%x) - Drop packet (UnknownChannel)!", getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel);
@@ -879,15 +869,9 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
             }
         }
 
-        // 0 hop telemetry and similar messages should not be rebroadcasted
         if (filtServiceEnabled == true &&
-            (config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_LOCAL_ONLY ||
-             config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_KNOWN_ONLY ||
-             config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_ALL ||
-             config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_ALL_SKIP_DECODING) &&
             p->which_payload_variant == meshtastic_MeshPacket_decoded_tag &&
             !sendcanceled &&
-            Do0HopTelemetry &&
             IS_ONE_OF(p->decoded.portnum,
                       meshtastic_PortNum_ATAK_FORWARDER,
                       meshtastic_PortNum_ATAK_PLUGIN,
@@ -925,13 +909,8 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
         }
 
         if (filtServiceEnabled == true &&
-            (config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_LOCAL_ONLY ||
-             config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_KNOWN_ONLY ||
-             config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_ALL ||
-             config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_ALL_SKIP_DECODING) &&
             p->which_payload_variant == meshtastic_MeshPacket_decoded_tag &&
             !sendcanceled &&
-            Do0HopTelemetry &&
             IS_ONE_OF(p->decoded.portnum,
                       meshtastic_PortNum_POSITION_APP,
                       meshtastic_PortNum_NODEINFO_APP))
@@ -945,12 +924,10 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
             skipHandle = true;
         }
 
-        // Neighbor info module is disabled, ignore expensive neighbor info packets
         if (p->which_payload_variant == meshtastic_MeshPacket_decoded_tag &&
             p->decoded.portnum == meshtastic_PortNum_NEIGHBORINFO_APP &&
             (!moduleConfig.has_neighbor_info || !moduleConfig.neighbor_info.enabled))
         {
-            // LOG_DEBUG("Neighbor info module is disabled, ignore neighbor packet");
             if (!sendcanceled)
             {
                 LOG_WARN("RXDATA: #%s %x -> %x HOP:%d/%d (CH:%x) - Drop packet (Neighbor module disabled)!", getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel);
@@ -959,7 +936,6 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
             }
             skipHandle = true;
         }
-        // JM mod end
 
         bool shouldIgnoreNonstandardPorts =
             config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_CORE_PORTNUMS_ONLY;

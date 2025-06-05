@@ -375,6 +375,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define HAS_SCREEN 0
 #endif
 
+static bool hopServiceEnabled = true;
 static bool filtServiceEnabled = true;
 static float filtPositionAndNodeInfoRatio = 0.1;
 

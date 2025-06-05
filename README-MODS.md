@@ -1,10 +1,12 @@
-## MESHTASTIC PACKET SLINGSHOT AND TRAFFIC OVERHEAD REDUCER
+## MESHTASTIC PACKET SLINGSHOT AND NETWORK TRAFFIC OVERHEAD REDUCER
 
 This is an experimental set of custom, purpose-built modifications to the official Meshtastic firmware, designed to **help advanced users fine-tune their Meshtastic networks**. There is no guarantee of stability or full functionality. This is an early proof-of-concept release intended to explore potential responses to future challenges that may arise as Meshtastic networks grow in size and complexity.
 
+This firmware-mod is intended for strategically placed nodes exposed to a high volume of traffic. By **reducing unnecessary packet forwarding, it helps minimize spectrum congestion and prevents network overload or collapse**. On the other hand, this filter guarantees that the **core functionality of the Meshtastic network remains fully operational** — ensuring neighbor node awareness and unrestricted text message forwarding between nodes. This firmware is non-intrusive to the Meshtastic network. It only processes packets intended for forwarding beyond your local cluster of nodes.
+
 ### How to Compile and Install Your Custom Firmware
 If you're serious about custom modifications, you should consider using VSCode with PlatformIO. However, for the rest of us, the easiest way is to use a simple online development environment like Gitpod.com. I’ve described the process briefly in this blog post:
-[MESHTASTIC – Compiling Your Own Firmware](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/02/meshtastic-kompilace-vlastniho-firmware.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp). If you want to compile this custom modification (instead of just the basic “Ping” mod which is ncluded as well), you can use this Gitpod link to get started right away:
+[MESHTASTIC – Compiling Your Own Firmware](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/02/meshtastic-kompilace-vlastniho-firmware.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp). If you want to compile this custom modification (instead of just the basic “Ping” mod which is ncluded as well), you can use this Gitpod link to get started right away (and follow the process described in post):
 
 https://gitpod.io#https://github.com/VilemR/meshtastic-custom-mods.git
 
@@ -46,5 +48,5 @@ The most recent release also includes a **modification to the Router class** tha
  - **LOC ON/OFF** – Enables or disables the extended "LOC" response, which includes a Google Maps link to the reported location. Responds only to direct messages sent to the remote node.
  - **FILT ON/OFF** – Enables (ON) or disables (OFF, default Meshtastic routing behavior) a custom packet filter implemented in Router.cpp. When enabled, all incoming Meshtastic packet types (PORTNUM) are received and processed locally. However, only core Meshtastic packets are relayed further. Less critical packets (system or overhead traffic) — such as telemetry, ATAK, or unknown types—are either delayed or dropped entirely.
 
-This feature is intended for strategically placed nodes exposed to a high volume of traffic. By reducing unnecessary packet forwarding, it helps minimize spectrum congestion and prevents network overload or collapse. On the other hand, this filter guarantees that the core functionality of the Meshtastic network remains fully operational — ensuring neighbor node awareness and unrestricted text message forwarding between nodes. This firmware is non-intrusive to the Meshtastic network. It only processes packets intended for forwarding beyond your local cluster of nodes.
+
 

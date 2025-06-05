@@ -149,12 +149,12 @@ void SignalReplyModule::reply(const meshtastic_MeshPacket &currentRequest, SIGNA
         meshtastic_NodeInfoLite *nodeReceiver = nodeDB->getMeshNode(nodeDB->getNodeNum());
         const char *nodeMeassuring = nodeReceiver->has_user ? nodeReceiver->user.short_name : idReceipient;
         if (command==SERVICE_DISCOVERY) {
-            snprintf(messageReply, sizeof(messageReply), "Available services : PING (ON/OFF), LOC (ON/OFF), FILT (ON/OFF)");
+            snprintf(messageReply, sizeof(messageReply), "Available services : PING (ON/OFF), LOC (ON/OFF), FILT (ON/OFF), HOP (ON/OFF)");
             hopReplyLimit = HOP_LIMIT_OBSERVABLE;  //this request is accupeted when broadcasted to all and to reply within limited range (who might be interested in flooding bandwidth)
             //snprintf(messageReply, sizeof(messageReply), "Available services @%s: PING (ON/OFF), LOC (ON/OFF), FILTER, FORWARDER, BRIDGE, STAT (HOP %s)", nodeMeassuring,hopDistance);
         }
         else if (command==SERVICE_GET_STATUS){
-            snprintf(messageReply, sizeof(messageReply), "SERVICE STATUS : PING %d, LOC %d, FILT %d", pingServiceEnabled, locServiceEnabled, filtServiceEnabled);
+            snprintf(messageReply, sizeof(messageReply), "SERVICE STATUS : PING %d, LOC %d, FILT %d, HOP %d.", pingServiceEnabled, locServiceEnabled, filtServiceEnabled, hopServiceEnabled);
         }
         else if (hopLimit != hopStart)
         {
@@ -244,6 +244,17 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
             LOG_INFO("SignalReplyModule::handleReceived(): Filter service disabled - no packet filtering.");
         }
 
+
+        else if (command == SERVICE_HOP_ON && currentRequest.to == nodeDB->getNodeNum())
+        {
+            hopServiceEnabled = true;
+            LOG_INFO("SignalReplyModule::handleReceived(): HOP changet enabled.");
+        }
+        else if (command == SERVICE_HOP_OFF && currentRequest.to == nodeDB->getNodeNum())
+        {
+            hopServiceEnabled = false;
+            LOG_INFO("SignalReplyModule::handleReceived(): HOP changer disabled.");
+        }
 
 
 

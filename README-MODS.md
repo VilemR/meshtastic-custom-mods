@@ -28,7 +28,7 @@ This is not a firmware meant to solve everything for you. Before starting your e
 - [Basic Troubleshooting](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/02/meshtastic-zakladni-troubleshooting.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
 
 ### How it works
-By default, this node filters out unnecessary Meshtastic traffic to reduce network congestion between clusters. For testing purposes, the filter can be temporarily disabled by sending the direct command FILT OFF to the node. The filter will automatically re-enable after approximately one hour, once the node database is refreshed. This allows for before-and-after comparisons of the filtering effect.
+By default, this node filters out unnecessary Meshtastic traffic to reduce network congestion between clusters. For testing purposes, the filter can be easily disabled by sending the direct command FILT OFF to the node. This allows for before-and-after comparisons of the filtering effect.
 
 When the filter is enabled, the node reduces or drops non-essential packets, such as frequent nodeinfo broadcasts or telemetry. In contrast, direct text messages sent to the slingshot node using a specific non-default channel are rebroadcast to all reachable nodes across connected clusters. This selective forwarding ensures that only intended messages are propagated beyond the local cluster. A non-default channel is used intentionally, so that only users who know the correct pre-shared key (PSK) can access the slingshot functionality. Users without the correct PSK will not be able to send cross-cluster messages.
 
@@ -50,5 +50,13 @@ The most recent release also includes a **modification to the Router class** tha
 
  By default, the FILTER service is intentionally enabled, while all other services are disabled. If you enable any service other than FILTER, it will remain active for approximately 60 minutes before automatically disabling itself, requiring manual re-enabling. If you disable filtering using the FILT OFF command, the FILTER service will stay disabled until either the FILT ON command is issued or the device is rebooted. 
 
+## How to start using SLING-SHOT feature.
+There are two intended scenarios for slingshotting packets to another cluster without cluttering your local cluster. New use cases may be introduced, or existing ones adjusted in the future, to improve user experience and overall network performance.
 
+**Inter-cluster Communication via Dedicated Channel**
+Communication with users in a different cluster should be done through a dedicated channel specifically created for this purpose. It is recommended to use a pre-shared key (PSK) shared among users permitted to access this feature in both clusters.
+
+**Message Forwarding from Default Channel (Feature on Hold)**
+Messages sent to this node on the default channel—when addressed directly to this node—can be rebroadcast to all reachable nodes, including those in both the local and remote clusters.
+Note: This feature is currently on hold!
 

@@ -900,7 +900,6 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
         {
             if (!sendcanceled)
             {
-
                 LOG_WARN("RXDATA: #%s %x -> %x HOP:%d/%d (CH:%x) - Drop packet (system or overhead traffic)!", getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel);
                 cancelSending(p->from, p->id);
                 sendcanceled = true;

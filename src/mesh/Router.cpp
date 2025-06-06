@@ -914,7 +914,7 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
             IS_ONE_OF(p->decoded.portnum,
                        meshtastic_PortNum_ROUTING_APP,
                        meshtastic_PortNum_TEXT_MESSAGE_APP,
-                       meshtastic_PortNum_TEXT_MESSAGE_COMPRESSED_APP,
+                       meshtastic_PortNum_TEXT_MESSAGE_COMPRESSED_APP
                       ))
         {
             if (!sendcanceled && getRandomFloat(0, 1) <= filtPositionAndNodeInfoRatio)

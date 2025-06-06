@@ -35,7 +35,7 @@ class SignalReplyModule : public SinglePortModule, public Observable<const mesht
      * want_replies handling
      */
     bool pingServiceEnabled = 0;
-    bool locServiceEnabled = 0;
+    
     
     unsigned long activationPingTime = 0;
     unsigned long activationLocTime = 0;

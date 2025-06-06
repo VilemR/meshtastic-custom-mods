@@ -18,7 +18,7 @@ To address this, the firmware modification slows down or completely blocks the f
 On top of the slingshot functionality, this firmware modification includes **two extra features** to help monitor signal quality and network coverage: Ping Command – Allows users to send ping messages to other nodes, which return signal quality metrics (e.g., RSSI and SNR). This is useful for quick diagnostics and verifying connectivity across nodes/clusters. Extended Range Test Module – Enhances the existing Range Test functionality by including location updates with each test result. These updates include a direct link to Google Maps, making it easy to view the exact GPS location where the test was performed.
 
 ### What it is not
-This is not a firmware meant to solve everything for you. Before starting your experiments, make sure you are familiar with the basics and have applied common best practices to avoid issues many of us have encountered. In addition to gathering information from various sources, try to consolidate your knowledge by reading a few focused blog posts:
+This firmware is not intended to solve all your problems—especially if you're experiencing basic communication issues with other nodes in the mesh network or poor overall network performance. Before starting your experiments, make sure you are familiar with the basics and have applied common best practices to avoid issues many of us have encountered. In addition to gathering information from various sources, try to consolidate your knowledge by reading a few focused blog posts:
 
 - [A Wrap-up of One Year of Experience](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/01/kapitola-1-po-jednom-roce.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
 - [MediumFast vs LongFast and Other Useful Hints](https://meshtastic--czbrno-blogspot-com.translate.goog/2025/01/meshtastic-moznost-soucasne-existence.html?_x_tr_sl=cs&_x_tr_tl=en&_x_tr_hl=cs&_x_tr_pto=wapp)
@@ -58,6 +58,6 @@ There are two intended scenarios for slingshotting packets to another cluster wi
 Communication with users in a different cluster should be done through a dedicated channel specifically created for this purpose. It is recommended to use a pre-shared key (PSK) shared among **users permitted to access this feature in both clusters**. If Slingshot (filter) is active, it will only forward packets with a known channel. Any packet with an unknown or unrecognized channel is dropped (to avoid unnecessary packets are rebroadcastet to other clusters).
 
 #### Message Forwarding from Default Channel
-Messages sent to this node on the default channel—when addressed directly to this node—can be **rebroadcast to all reachable nodes, including those in both the local and remote clusters**.
+Messages sent to this node on the default channel—when addressed directly to this node—can be **rebroadcast to all reachable nodes, including those in both the local and remote clusters**. Messages sent on default channel to all are not rebroadcasted via sling-shot to other clusters at all.
 
 

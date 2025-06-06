@@ -266,7 +266,7 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
                 LOG_INFO("SignalReplyModule::handleReceived(): Ping reply requested.");
                 reply(currentRequest,command);    
             } else {
-                LOG_INFO("SignalReplyModule::handleReceived(): Ping reply ignored (activation expired)");
+                LOG_INFO("SignalReplyModule::handleReceived(): Ping reply ignored (service expired)");
                 pingServiceEnabled = 0;
             }
         }    
@@ -280,7 +280,7 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
                 LOG_INFO("SignalReplyModule::handleReceived(): Location reply requested.");
                 reply(currentRequest,command);
             } else {
-                LOG_INFO("SignalReplyModule::handleReceived(): Location reply ignored (activation expired)");
+                LOG_INFO("SignalReplyModule::handleReceived(): Location reply ignored (service expired)");
                 locServiceEnabled = 0;
             }
         }

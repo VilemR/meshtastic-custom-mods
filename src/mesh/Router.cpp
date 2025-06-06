@@ -844,7 +844,7 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
                     {
                         if (channels.isDefaultChannel(chIndex))
                         {
-                            LOG_WARN("RXDATA: #%s %x -> %x HOP:%d/%d (CH:%x) - Drop packet (DefaulChannel not for us)!", getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel);
+                            LOG_WARN("RXDATA: #%s %x -> %x HOP:%d/%d (CH:%x) - Drop packet (DefaulChannel broadcast to all)!", getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel);
                             cancelSending(p->from, p->id);
                             sendcanceled = true;
                             skipHandle = true;
@@ -909,19 +909,41 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
 
         if (filtServiceEnabled == true &&
             p->which_payload_variant == meshtastic_MeshPacket_decoded_tag &&
+            channels.isDefaultChannel(p->channel) &&
             !sendcanceled &&
             IS_ONE_OF(p->decoded.portnum,
-                      meshtastic_PortNum_POSITION_APP,
-                      meshtastic_PortNum_NODEINFO_APP))
+                       meshtastic_PortNum_ROUTING_APP,
+                       meshtastic_PortNum_TEXT_MESSAGE_APP,
+                       meshtastic_PortNum_TEXT_MESSAGE_COMPRESSED_APP,
+                      ))
         {
             if (!sendcanceled && getRandomFloat(0, 1) <= filtPositionAndNodeInfoRatio)
             {
-                LOG_WARN("RXDATA: #%s %x -> %x HOP:%d/%d (CH:%x) - Drop packet (Location/NodeInfo suppression %.2f%%)!", getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel, filtPositionAndNodeInfoRatio * 100);
+                LOG_WARN("RXDATA: #%s %x -> %x HOP:%d/%d (CH:%x) - Drop packet (Location/NodeInfo suppression down to %.2f%%)!", getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel, filtPositionAndNodeInfoRatio * 100);
                 cancelSending(p->from, p->id);
                 sendcanceled = true;
             }
             skipHandle = true;
         }
+
+        if (filtServiceEnabled == true &&
+            p->which_payload_variant == meshtastic_MeshPacket_decoded_tag &&
+            !sendcanceled &&
+            isToUs(p) && 
+            IS_ONE_OF(p->decoded.portnum,
+                      meshtastic_PortNum_POSITION_APP,
+                      meshtastic_PortNum_NODEINFO_APP))
+        {
+                LOG_WARN("RXDATA: #%s %x -> %x HOP:%d/%d (CH:%x) - SLING-SHOT - rebroadcasting packet on Default channel!", getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel);
+                if (p->hop_limit < SLINGSHOT_HOP_LIMIT)
+                {
+                    p->hop_limit = SLINGSHOT_HOP_LIMIT; // set the hop limit to the slingshot value
+                    LOG_WARN("RXDATA: #%s %x -> %x HOP:%d/%d (CH:%x) - SLING-SHOT HOP limit adjusted!", getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel);
+                }
+        }
+
+
+
 
         if (p->which_payload_variant == meshtastic_MeshPacket_decoded_tag &&
             p->decoded.portnum == meshtastic_PortNum_NEIGHBORINFO_APP &&

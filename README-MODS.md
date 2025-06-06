@@ -55,9 +55,9 @@ The most recent release also includes a **modification to the Router class** tha
 There are two intended scenarios for slingshotting packets to another cluster without cluttering your local cluster. New use cases may be introduced, or existing ones adjusted in the future, to improve user experience and overall network performance.
 
 #### Inter-cluster Communication via Dedicated Channel
-Communication with users in a different cluster should be done through a dedicated channel specifically created for this purpose. It is recommended to use a pre-shared key (PSK) shared among **users permitted to access this feature in both clusters**.
+Communication with users in a different cluster should be done through a dedicated channel specifically created for this purpose. It is recommended to use a pre-shared key (PSK) shared among **users permitted to access this feature in both clusters**. If Slingshot (filter) is active, it will only forward packets with a known channel. Any packet with an unknown or unrecognized channel is dropped (to avoid unnecessary packets are rebroadcastet to other clusters).
 
-#### Message Forwarding from Default Channel (Feature on Hold)
+#### Message Forwarding from Default Channel
 Messages sent to this node on the default channel—when addressed directly to this node—can be **rebroadcast to all reachable nodes, including those in both the local and remote clusters**.
-Note: This feature is currently on hold!
+
 

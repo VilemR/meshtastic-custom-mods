@@ -377,7 +377,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 static bool hopServiceEnabled = true;
 static bool filtServiceEnabled = true;
-static float filtPositionAndNodeInfoRatio = 0.1;
+static float filtPositionAndNodeInfoRatio = 0.50f;
 static int SLINGSHOT_HOP_LIMIT = 5;
 
 static bool locServiceEnabled = 0;

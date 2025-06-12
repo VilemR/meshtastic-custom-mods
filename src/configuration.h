@@ -375,12 +375,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define HAS_SCREEN 0
 #endif
 
-static bool hopServiceEnabled = true;
-static bool filtServiceEnabled = true;
-static float filtPositionAndNodeInfoRatio = 0.50f;
-static int SLINGSHOT_HOP_LIMIT = 5;
-
-static bool locServiceEnabled = 0;
 
 #include "DebugConfiguration.h"
 #include "RF95Configuration.h"
+
+extern bool hopServiceEnabled;
+extern bool filtServiceEnabled;
+extern bool locServiceEnabled;
+extern int SLINGSHOT_HOP_LIMIT5;
+extern float filtPositionAndNodeInfoRatio;
+
+//static bool hopServiceEnabled;
+//static bool filtServiceEnabled;
+//static bool locServiceEnabled;
+//static float filtPositionAndNodeInfoRatio;
+//static int SLINGSHOT_HOP_LIMIT5;

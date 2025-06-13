@@ -382,7 +382,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 extern bool hopServiceEnabled;
 extern bool filtServiceEnabled;
 extern bool locServiceEnabled;
-extern int SLINGSHOT_HOP_LIMIT5;
+extern int SLINGSHOT_HOP_LIMIT;
 extern float filtPositionAndNodeInfoRatio;
 
 //static bool hopServiceEnabled;

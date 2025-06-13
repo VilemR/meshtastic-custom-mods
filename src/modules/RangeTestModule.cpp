@@ -132,6 +132,7 @@ void RangeTestModuleRadio::sendPayload(NodeNum dest, bool wantReplies)
     {
         p->from = nodeDB->getNodeNum();
         p->to = NODENUM_BROADCAST; //?? je videt ze FFFFF ale kde se to prirazuje, neni tu fallback?
+        //Intended to send packets using Private channel - privacy concerns sharing accurate position on DefaultChannel
         p->channel = channels.getByName("Private").index;
         p->want_ack = false;
         if (p->priority == meshtastic_MeshPacket_Priority_UNSET)

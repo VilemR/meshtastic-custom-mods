@@ -36,8 +36,6 @@
 // static MemoryPool<MeshPacket> staticPool(MAX_PACKETS);
 static MemoryDynamic<meshtastic_MeshPacket> staticPool;
 
-
-
 bool isCorePortNum(meshtastic_PortNum portnum)
 {
     return IS_ONE_OF(portnum,
@@ -46,7 +44,7 @@ bool isCorePortNum(meshtastic_PortNum portnum)
                      meshtastic_PortNum_TEXT_MESSAGE_COMPRESSED_APP);
 }
 
-bool isReducedPortNum(meshtastic_PortNum portnum)
+bool isCoreReducedPortNum(meshtastic_PortNum portnum)
 {
     return IS_ONE_OF(portnum,
                      meshtastic_PortNum_POSITION_APP,
@@ -57,10 +55,8 @@ bool isReducedPortNum(meshtastic_PortNum portnum)
 
 bool isNotCorePortNum(meshtastic_PortNum portnum)
 {
-    return !isCorePortNum(portnum) && !isReducedPortNum(portnum);
+    return !isCorePortNum(portnum) && !isCoreReducedPortNum(portnum);
 }
-
-
 
 Allocator<meshtastic_MeshPacket> &packetPool = staticPool;
 
@@ -302,7 +298,7 @@ ErrorCode Router::send(meshtastic_MeshPacket *p)
         }
     }
 
-    String packhannel = channels.getName(p->channel);
+    String packetChannelName = channels.getName(p->channel);
 
     char idSender[10];
     char idReceipient[10];
@@ -313,10 +309,10 @@ ErrorCode Router::send(meshtastic_MeshPacket *p)
     const char *nodeRequesting = nodeSender->has_user ? nodeSender->user.short_name : idSender;
     meshtastic_NodeInfoLite *nodeReceiver = nodeDB->getMeshNode(p->to);
     const char *nodeMeassuring = nodeReceiver->has_user ? nodeReceiver->user.short_name : idReceipient;
-    
-    //LOG_WARN("send() %s -> %s", nodeRequesting, nodeRequesting);
 
-    //LOG_WARN("send(): packet [x] %s -> %s", p->id, nodeRequesting, nodeMeassuring);
+    // LOG_WARN("send() %s -> %s", nodeRequesting, nodeRequesting);
+
+    // LOG_WARN("send(): packet [x] %s -> %s", p->id, nodeRequesting, nodeMeassuring);
 
     // Ignore (sending overhead below treshold - do not remove from send())
     // handleReceived(): POSITION_APP b7b53ce1 -> ffffffff HOP:1/5 (CH:3 / LongFast) - KEPT: network overhead under limit (75.0%)
@@ -324,52 +320,6 @@ ErrorCode Router::send(meshtastic_MeshPacket *p)
 
     // ??
     // send(): #,e#?# 433ca2c4 -> ffffffff HOP:0/3 (CH:47 / LongFast) - KEPT: no filter rule matching!
-
-    if (filtServiceEnabled == true)
-    {
-        if (isFromUs(p) && !(isCorePortNum(p->decoded.portnum) || isReducedPortNum(p->decoded.portnum)))
-        {
-            LOG_WARN("send():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - CHANGED: Non core packet from us (HOP=0 to reduce flooding)!", 
-                p->id, getPortNumName(p->decoded.portnum), 
-                p->from, p->to, 
-                p->hop_limit, p->hop_start, 
-                p->channel, 
-                packhannel.c_str());
-            p->hop_limit = 0;
-            p->hop_start = 0; // reset hop start, so we don't send it to the next node
-        }
-        else if (!isFromUs)
-        {
-            LOG_WARN("send():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - DROPPED: Packet from another node!", 
-                p->id, getPortNumName(p->decoded.portnum), 
-                p->from, p->to, 
-                p->hop_limit, p->hop_start, 
-                p->channel, packhannel.c_str());
-            cancelSending(p->from, p->id);
-        }
-        else if (isFromUs(p))
-        {
-            LOG_WARN("send():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - KEPT: Packet from our node.", 
-                p->id, getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel, packhannel.c_str());
-        }
-        else if (!(isCorePortNum(p->decoded.portnum) || isReducedPortNum(p->decoded.portnum)))
-        {
-            LOG_WARN("send():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - DROPPED: not core port!", 
-                p->id, getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel, packhannel.c_str());
-            cancelSending(p->from, p->id);    
-        }
-        else
-        {
-            LOG_WARN("send():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - KEPT: no filter rule matching!", 
-                p->id, getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel, packhannel.c_str());
-            cancelSending(p->from, p->id);
-        }
-    }
-    else
-    {
-        LOG_WARN("send():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - (FILTER OFF)", 
-            p->id, getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel, packhannel.c_str());
-    }
 
     // Never set the want_ack flag on broadcast packets sent over the air.
     if (isBroadcast(p->to))
@@ -382,10 +332,54 @@ ErrorCode Router::send(meshtastic_MeshPacket *p)
     p->relay_node = nodeDB->getLastByteOfNodeNum(getNodeNum()); // set the relayer to us
     // If we are the original transmitter, set the hop limit with which we start
     if (isFromUs(p))
+    {
         p->hop_start = p->hop_limit;
+    }
 
-    // If the packet hasn't yet been encrypted, do so now (it might already be encrypted if we are just forwarding it)
-
+    if (filtServiceEnabled == true)
+    {
+        if (isFromUs(p) && !(isCorePortNum(p->decoded.portnum) || isCoreReducedPortNum(p->decoded.portnum)))
+        {
+            LOG_INFO("send():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - CHANGED: Non core packet from us (HOP=0 to reduce flooding)!",
+                     p->id, getPortNumName(p->decoded.portnum),
+                     p->from, p->to,
+                     p->hop_limit, p->hop_start,
+                     p->channel,
+                     packetChannelName.c_str());
+            p->hop_limit = 0;
+            p->hop_start = 0; // reset hop start, so we don't send it to the next node
+        }
+        else if (isFromUs(p) && (isCorePortNum(p->decoded.portnum) || isCoreReducedPortNum(p->decoded.portnum)))
+        {
+            LOG_INFO("send():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - KEPT: Core Packet from our node.",
+                     p->id, getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel, packetChannelName.c_str());
+        }
+        else if (!isFromUs && !(isCorePortNum(p->decoded.portnum) || isCoreReducedPortNum(p->decoded.portnum)))
+        {
+            LOG_WARN("send():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - DROPPED: Non-core Packet from another node!",
+                     p->id, getPortNumName(p->decoded.portnum),
+                     p->from, p->to,
+                     p->hop_limit, p->hop_start,
+                     p->channel, packetChannelName.c_str());
+            cancelSending(p->from, p->id);
+        }
+        else if (!(isCorePortNum(p->decoded.portnum) || isCoreReducedPortNum(p->decoded.portnum)))
+        { // Redundant - but for clarity
+            LOG_WARN("send():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - DROPPED: not core port!",
+                     p->id, getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel, packetChannelName.c_str());
+            cancelSending(p->from, p->id);
+        }
+        else
+        {
+            LOG_INFO("send():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - KEPT: no drop rule matching!",
+                     p->id, getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel, packetChannelName.c_str());
+        }
+    }
+    else
+    {
+        LOG_INFO("send():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - (FILTER OFF)",
+                 p->id, getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel, packetChannelName.c_str());
+    }
     if (!(p->which_payload_variant == meshtastic_MeshPacket_encrypted_tag ||
           p->which_payload_variant == meshtastic_MeshPacket_decoded_tag))
     {
@@ -393,8 +387,6 @@ ErrorCode Router::send(meshtastic_MeshPacket *p)
     }
 
     fixPriority(p); // Before encryption, fix the priority if it's unset
-
-    // If the packet is not yet encrypted, do so now
     if (p->which_payload_variant == meshtastic_MeshPacket_decoded_tag)
     {
         ChannelIndex chIndex = p->channel; // keep as a local because we are about to change it
@@ -879,7 +871,6 @@ String Router::getPortNumName(meshtastic_PortNum portnum)
  * Note: some packets may merely being passed through this node and will be forwarded elsewhere.
  */
 
-
 void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
 {
     bool skipHandle = false;
@@ -909,54 +900,87 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
 
         bool sendcanceled = false;
 
-        /*
-        If filter
-         if unknownchannel drop (handing in Send())
-         if not core drop
-         if reduced reduce down to 10% - keep only 100% packets addressed to us
-         if DefaultChannel broadcast to all except to us - drop
-         
-         .. then some additional traffic is reduced in send()
-        */
-
-        String packhannel = channels.getName(p->channel);
+        String packetChannelName = channels.getName(p->channel);
         if (filtServiceEnabled == true)
         {
             if (isNotCorePortNum(p->decoded.portnum) && !isToUs(p))
             {
                 LOG_WARN("handleReceived():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - DROPPED: not core port!",
-                    p->id,getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel, packhannel.c_str());
+                         p->id, getPortNumName(p->decoded.portnum),
+                         p->from, p->to,
+                         p->hop_limit, p->hop_start,
+                         p->channel,
+                         packetChannelName.c_str());
                 sendcanceled = true;
             }
-
-            else if (isReducedPortNum(p->decoded.portnum) )
+            else if (isCoreReducedPortNum(p->decoded.portnum))
             {
-               if (!isToUs(p)) {
-                if (getRandomFloat(0, 1) >= filtPositionAndNodeInfoRatio)
+                if (!isToUs(p))
                 {
-                    LOG_WARN("handleReceived():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - DROPPED: network overhead suppression (%.1f%%)", 
-                        p->id,getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel, packhannel.c_str(), filtPositionAndNodeInfoRatio * 100);
-                    sendcanceled = true;
-                } else {
-                    LOG_WARN("handleReceived():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - KEPT: network overhead under limit (%.1f%%)", 
-                        p->id,getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel, packhannel.c_str(), filtPositionAndNodeInfoRatio * 100);
+                    if (getRandomFloat(0, 1) >= filtPositionAndNodeInfoRatio)
+                    {
+                        LOG_WARN("handleReceived():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - DROPPED: network overhead suppression (%.1f%%)",
+                                 p->id, getPortNumName(p->decoded.portnum),
+                                 p->from, p->to,
+                                 p->hop_limit, p->hop_start,
+                                 p->channel, packetChannelName.c_str(),
+                                 filtPositionAndNodeInfoRatio * 100);
+                        sendcanceled = true;
+                    }
+                    else
+                    {
+                        LOG_INFO("handleReceived():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - KEPT: network overhead under limit (%.1f%%)",
+                                 p->id, getPortNumName(p->decoded.portnum),
+                                 p->from, p->to,
+                                 p->hop_limit, p->hop_start,
+                                 p->channel,
+                                 packetChannelName.c_str(),
+                                 filtPositionAndNodeInfoRatio * 100);
+                    }
                 }
-
-               } else {
-                   LOG_WARN("handleReceived():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - KEPT: network overhead for our node!", 
-                    p->id,getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel, packhannel.c_str());
-               }   
+                else
+                {
+                    LOG_INFO("handleReceived():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - KEPT: network overhead for our node!",
+                             p->id, getPortNumName(p->decoded.portnum),
+                             p->from, p->to,
+                             p->hop_limit, p->hop_start,
+                             p->channel,
+                             packetChannelName.c_str());
+                }
             }
             else if (channels.isDefaultChannel(p->channel) && !isToUs(p))
             {
-                LOG_WARN("handleReceived():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - DROPPED: Broadcast on DefaulChannel", 
-                    p->id,getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel, packhannel.c_str());
+                LOG_WARN("handleReceived():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - DROPPED: Broadcast on DefaulChannel",
+                         p->id, getPortNumName(p->decoded.portnum),
+                         p->from, p->to,
+                         p->hop_limit, p->hop_start,
+                         p->channel,
+                         packetChannelName.c_str());
                 sendcanceled = true;
+            }
+            else if (channels.isDefaultChannel(p->channel) && isToUs(p) &&
+                     p->decoded.portnum == meshtastic_PortNum_TEXT_MESSAGE_APP) // !! Slingshot case for us on defaulch!
+            {
+                LOG_WARN("handleReceived():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - SLINGSHOT: Re-Broadcast of message on DefaulChannel to us!",
+                         p->id, getPortNumName(p->decoded.portnum),
+                         p->from, p->to,
+                         p->hop_limit, p->hop_start,
+                         p->channel,
+                         packetChannelName.c_str());
+                p->to = NODENUM_BROADCAST; // Re-broadcast to all nodes
+                if (hopServiceEnabled == true)
+                {
+                    p->hop_limit = SLINGSHOT_HOP_LIMIT; // config.lora.hop_limit; // Reset hop limit to the configured value
+                }
             }
             else
             {
-                LOG_ERROR("handleReceived():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - KEPT: no filter rule matching", 
-                    p->id,getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel, packhannel.c_str());
+                LOG_INFO("handleReceived():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - KEPT: no filter rule matching",
+                         p->id, getPortNumName(p->decoded.portnum),
+                         p->from, p->to,
+                         p->hop_limit, p->hop_start,
+                         p->channel,
+                         packetChannelName.c_str());
             }
 
             if (sendcanceled == true)
@@ -967,8 +991,12 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
         }
         else
         {
-            LOG_WARN("handleReceived():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - (FILTER OFF)!", 
-                p->id, getPortNumName(p->decoded.portnum), p->from, p->to, p->hop_limit, p->hop_start, p->channel, packhannel.c_str());
+            LOG_INFO("handleReceived():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - (FILTER OFF)!",
+                     p->id, getPortNumName(p->decoded.portnum),
+                     p->from, p->to,
+                     p->hop_limit, p->hop_start,
+                     p->channel,
+                     packetChannelName.c_str());
         }
     }
     else

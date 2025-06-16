@@ -254,6 +254,30 @@ ErrorCode Router::rawSend(meshtastic_MeshPacket *p)
     return iface->send(p);
 }
 
+
+void Router::getShortName(char* idSender, size_t idSenderSize , uint32_t id)
+{
+    //char idSender[10];
+    meshtastic_NodeInfoLite *nodeSender = nodeDB->getMeshNode(id);
+    if (nodeSender == NULL)
+    {
+        LOG_ERROR("send(): No node info for %x", id);
+        snprintf(idSender, sizeof(idSender), "%08x", id);
+    }
+    else
+    {
+        if (nodeSender->has_user)
+        {
+            snprintf(idSender, sizeof(idSender), "%s", nodeSender->user.short_name);
+        }
+        else
+        {
+            snprintf(idSender, sizeof(idSender), "%08x", id);
+        }
+    }
+    //LOG_ERROR("send(): Return %s", idSender);
+}
+
 /**
  * Send a packet on a suitable interface.  This routine will
  * later free() the packet to pool.  This routine is not allowed to stall.
@@ -299,27 +323,14 @@ ErrorCode Router::send(meshtastic_MeshPacket *p)
     }
 
     String packetChannelName = channels.getName(p->channel);
-
-    char idSender[10];
-    char idReceipient[10];
-    snprintf(idSender, sizeof(idSender), "%d", p->from);
-    snprintf(idReceipient, sizeof(idReceipient), "%d", p->to);
-
-    meshtastic_NodeInfoLite *nodeSender = nodeDB->getMeshNode(p->from);
-    const char *nodeRequesting = nodeSender->has_user ? nodeSender->user.short_name : idSender;
-    meshtastic_NodeInfoLite *nodeReceiver = nodeDB->getMeshNode(p->to);
-    const char *nodeMeassuring = nodeReceiver->has_user ? nodeReceiver->user.short_name : idReceipient;
-
-    // LOG_WARN("send() %s -> %s", nodeRequesting, nodeRequesting);
-
-    // LOG_WARN("send(): packet [x] %s -> %s", p->id, nodeRequesting, nodeMeassuring);
-
-    // Ignore (sending overhead below treshold - do not remove from send())
-    // handleReceived(): POSITION_APP b7b53ce1 -> ffffffff HOP:1/5 (CH:3 / LongFast) - KEPT: network overhead under limit (75.0%)
-    // send(): #POSITION_APP b7b53ce1 -> ffffffff HOP:0/5 (CH:3 / LongFast) - KEPT: no filter rule matching!
-
-    // ??
-    // send(): #,e#?# 433ca2c4 -> ffffffff HOP:0/3 (CH:47 / LongFast) - KEPT: no filter rule matching!
+    
+    //char idSender[15];
+    //char idRecipient[15];
+    
+    //getShortName(idSender,15, p->from);
+    //getShortName(idRecipient, 15, p->to);
+    
+    //LOG_WARN("NODE: %s -> %s", idSender, idRecipient);
 
     // Never set the want_ack flag on broadcast packets sent over the air.
     if (isBroadcast(p->to))

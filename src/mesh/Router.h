@@ -29,6 +29,8 @@ class Router : protected concurrency::OSThread, protected PacketHistory
      */
     Router();
 
+    void getShortName(char* idSender, size_t idSenderSize , uint32_t id);
+
     String getPortNumName(meshtastic_PortNum portnum);
 
     /**

@@ -254,10 +254,9 @@ ErrorCode Router::rawSend(meshtastic_MeshPacket *p)
     return iface->send(p);
 }
 
-
-void Router::getShortName(char* idSender, size_t idSenderSize , uint32_t id)
+void Router::getShortName(char *idSender, size_t idSenderSize, uint32_t id)
 {
-    //char idSender[10];
+    // char idSender[10];
     meshtastic_NodeInfoLite *nodeSender = nodeDB->getMeshNode(id);
     if (nodeSender == NULL)
     {
@@ -275,7 +274,7 @@ void Router::getShortName(char* idSender, size_t idSenderSize , uint32_t id)
             snprintf(idSender, sizeof(idSender), "%08x", id);
         }
     }
-    //LOG_ERROR("send(): Return %s", idSender);
+    // LOG_ERROR("send(): Return %s", idSender);
 }
 
 /**
@@ -323,14 +322,14 @@ ErrorCode Router::send(meshtastic_MeshPacket *p)
     }
 
     String packetChannelName = channels.getName(p->channel);
-    
-    //char idSender[15];
-    //char idRecipient[15];
-    
-    //getShortName(idSender,15, p->from);
-    //getShortName(idRecipient, 15, p->to);
-    
-    //LOG_WARN("NODE: %s -> %s", idSender, idRecipient);
+
+    // char idSender[15];
+    // char idRecipient[15];
+
+    // getShortName(idSender,15, p->from);
+    // getShortName(idRecipient, 15, p->to);
+
+    // LOG_WARN("NODE: %s -> %s", idSender, idRecipient);
 
     // Never set the want_ack flag on broadcast packets sent over the air.
     if (isBroadcast(p->to))
@@ -926,21 +925,31 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
             }
             else if (isCoreReducedPortNum(p->decoded.portnum))
             {
-                if (!isToUs(p))
+                if (isFromUs(p))
+                {
+                    LOG_INFO("handleReceived():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - KEPT: network overhead broadcast FromUs()",
+                             p->id, getPortNumName(p->decoded.portnum),
+                             p->from, p->to,
+                             p->hop_limit, p->hop_start,
+                             p->channel, packetChannelName.c_str());
+                }
+                else if (!isToUs(p))
                 {
                     if (getRandomFloat(0, 1) >= filtPositionAndNodeInfoRatio)
                     {
-                        LOG_WARN("handleReceived():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - DROPPED: network overhead suppression (%.1f%%)",
+                        LOG_WARN("handleReceived():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - TERMINATED: network overhead above > %.1f%% (HOP changed to 0/0)",
                                  p->id, getPortNumName(p->decoded.portnum),
                                  p->from, p->to,
                                  p->hop_limit, p->hop_start,
                                  p->channel, packetChannelName.c_str(),
                                  filtPositionAndNodeInfoRatio * 100);
-                        sendcanceled = true;
+                        // sendcanceled = true;
+                        p->hop_start = 0;
+                        p->hop_limit = 0;
                     }
                     else
                     {
-                        LOG_INFO("handleReceived():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - KEPT: network overhead under limit (%.1f%%)",
+                        LOG_INFO("handleReceived():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - KEPT: acceptable network overhead <%.1f%%",
                                  p->id, getPortNumName(p->decoded.portnum),
                                  p->from, p->to,
                                  p->hop_limit, p->hop_start,

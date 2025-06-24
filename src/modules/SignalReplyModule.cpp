@@ -34,9 +34,9 @@ SIGNAL_REPLY_MODULE_COMMAND SignalReplyModule::getCommand(const meshtastic_MeshP
         messageRequest[i] = static_cast<char>(p.payload.bytes[i]);
     }
     messageRequest[p.payload.size] = '\0';
-    
+
     LOG_ERROR("SignalReplyModule::getCommand(): '%s' from %s.", messageRequest, currentRequest.from == 0 ? "local" : std::to_string(currentRequest.from).c_str());
-    
+
     if (strcasestr_custom(messageRequest, "ping on") != nullptr)
     {
         return SERVICE_PING_ON;
@@ -58,6 +58,10 @@ SIGNAL_REPLY_MODULE_COMMAND SignalReplyModule::getCommand(const meshtastic_MeshP
     {
         return SERVICE_GET_STATUS;
     }
+    else if (strcasestr_custom(messageRequest, "version?") || strcasestr_custom(messageRequest, "ver?") != nullptr)
+    {
+        return REQUEST_VERSION;
+    }
     else if (strcasestr_custom(messageRequest, "loc on") != nullptr)
     {
         return SERVICE_LOC_ON;
@@ -76,7 +80,6 @@ SIGNAL_REPLY_MODULE_COMMAND SignalReplyModule::getCommand(const meshtastic_MeshP
         return SERVICE_FILT_OFF;
     }
 
-
     else if (strcasestr_custom(messageRequest, "seq ") != nullptr)
     {
         return REQUEST_LOC_REPLY;
@@ -84,47 +87,53 @@ SIGNAL_REPLY_MODULE_COMMAND SignalReplyModule::getCommand(const meshtastic_MeshP
     return UNKNOWN_COMMAND;
 }
 
-int hopDistanceSinceSenderHops(int hopStart, int hopLimit){
-    //When receiving a packet, the difference between hop_start and hop_limit gives how many hops it traveled.
+int hopDistanceSinceSenderHops(int hopStart, int hopLimit)
+{
+    // When receiving a packet, the difference between hop_start and hop_limit gives how many hops it traveled.
     return hopStart - hopLimit;
 }
 
-int hopDistanceSinceSender(const meshtastic_MeshPacket &currentRequest){
-    //When receiving a packet, the difference between hop_start and hop_limit gives how many hops it traveled.
-    int hopLimit = currentRequest.hop_limit; // If unset treated as zero (no forwarding, send to direct neighbor nodes only) 
+int hopDistanceSinceSender(const meshtastic_MeshPacket &currentRequest)
+{
+    // When receiving a packet, the difference between hop_start and hop_limit gives how many hops it traveled.
+    int hopLimit = currentRequest.hop_limit; // If unset treated as zero (no forwarding, send to direct neighbor nodes only)
                                              // if 1, allow hopping through one node, etc...
                                              // For our usecase real world topologies probably have a max of about 3.
     int hopStart = currentRequest.hop_start;
     return hopDistanceSinceSenderHops(hopStart, hopLimit);
 }
 
-const char* commandToString(SIGNAL_REPLY_MODULE_COMMAND command) {
-    switch (command) {
-        case SERVICE_PING_ON:
-            return "SERVICE_PING_ON";
-        case SERVICE_PING_OFF:
-            return "SERVICE_PING_OFF";
-        case REQUEST_PING_REPLY:
-            return "REQUEST_PING_REPLY";
-        case SERVICE_DISCOVERY:
-            return "SERVICE_DISCOVERY";
-        case SERVICE_GET_STATUS:
-            return "SERVICE_GET_STATUS";    
-        case SERVICE_LOC_ON:
-            return "SERVICE_LOC_ON";
-        case SERVICE_LOC_OFF:
-            return "SERVICE_LOC_OFF";
+const char *commandToString(SIGNAL_REPLY_MODULE_COMMAND command)
+{
+    switch (command)
+    {
+    case SERVICE_PING_ON:
+        return "SERVICE_PING_ON";
+    case SERVICE_PING_OFF:
+        return "SERVICE_PING_OFF";
+    case REQUEST_PING_REPLY:
+        return "REQUEST_PING_REPLY";
+    case SERVICE_DISCOVERY:
+        return "SERVICE_DISCOVERY";
+    case SERVICE_GET_STATUS:
+        return "SERVICE_GET_STATUS";
+    case SERVICE_LOC_ON:
+        return "SERVICE_LOC_ON";
+    case SERVICE_LOC_OFF:
+        return "SERVICE_LOC_OFF";
 
-        case SERVICE_FILT_ON:
-            return "SERVICE_FILT_ON";
-        case SERVICE_FILT_OFF:
-            return "SERVICE_FILT_OFF";
+    case SERVICE_FILT_ON:
+        return "SERVICE_FILT_ON";
+    case SERVICE_FILT_OFF:
+        return "SERVICE_FILT_OFF";
+    case REQUEST_VERSION:
+        return "REQUEST_VERSION";
 
-        case REQUEST_LOC_REPLY:
-            return "REQUEST_LOC_REPLY";
-        case UNKNOWN_COMMAND:
-        default:
-            return "UNKNOWN_COMMAND";
+    case REQUEST_LOC_REPLY:
+        return "REQUEST_LOC_REPLY";
+    case UNKNOWN_COMMAND:
+    default:
+        return "UNKNOWN_COMMAND";
     }
 }
 
@@ -148,16 +157,22 @@ void SignalReplyModule::reply(const meshtastic_MeshPacket &currentRequest, SIGNA
         const char *nodeRequesting = nodeSender->has_user ? nodeSender->user.short_name : idSender;
         meshtastic_NodeInfoLite *nodeReceiver = nodeDB->getMeshNode(nodeDB->getNodeNum());
         const char *nodeMeassuring = nodeReceiver->has_user ? nodeReceiver->user.short_name : idReceipient;
-        if (command==SERVICE_DISCOVERY) {
+        if (command == SERVICE_DISCOVERY)
+        {
             snprintf(messageReply, sizeof(messageReply), "Available services : PING (ON/OFF), LOC (ON/OFF), FILT (ON/OFF), HOP (ON/OFF)");
-            hopReplyLimit = HOP_LIMIT_OBSERVABLE;  //this request is accupeted when broadcasted to all and to reply within limited range (who might be interested in flooding bandwidth)
-            //snprintf(messageReply, sizeof(messageReply), "Available services @%s: PING (ON/OFF), LOC (ON/OFF), FILTER, FORWARDER, BRIDGE, STAT (HOP %s)", nodeMeassuring,hopDistance);
+            hopReplyLimit = HOP_LIMIT_OBSERVABLE; // this request is accupeted when broadcasted to all and to reply within limited range (who might be interested in flooding bandwidth)
+            // snprintf(messageReply, sizeof(messageReply), "Available services @%s: PING (ON/OFF), LOC (ON/OFF), FILTER, FORWARDER, BRIDGE, STAT (HOP %s)", nodeMeassuring,hopDistance);
         }
-        else if (command==SERVICE_GET_STATUS){
+        else if (command == SERVICE_GET_STATUS)
+        {
             snprintf(messageReply, sizeof(messageReply), "SERVICE STATUS : PING %d, LOC %d, FILT %d, HOP %d.", pingServiceEnabled, locServiceEnabled, filtServiceEnabled, hopServiceEnabled);
         }
-        else if (hopLimit != hopStart)
+        else if (command == REQUEST_VERSION)
         {
+            snprintf(messageReply, sizeof(messageReply), "SERVICE VERSION : %s", APP_MOD_VERSION.c_str());
+        }
+            else if (hopLimit != hopStart)
+            {
             snprintf(messageReply, sizeof(messageReply), "%s: RSSI/SNR cannot be determined due to indirect connection through %d node(s)!", nodeRequesting, (hopDistance));
         }
         else
@@ -196,43 +211,47 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
             pingServiceEnabled = 1;
             activationPingTime = millis();
             LOG_INFO("SignalReplyModule::handleReceived(): Ping service enabled.");
-            reply(currentRequest,command);
+            reply(currentRequest, command);
         }
         else if (command == SERVICE_PING_OFF && currentRequest.to == nodeDB->getNodeNum())
         {
             pingServiceEnabled = 0;
             LOG_INFO("SignalReplyModule::handleReceived(): Ping service disabled.");
         }
+        else if (command == REQUEST_VERSION && currentRequest.to == nodeDB->getNodeNum())
+        {
+            reply(currentRequest, command);
+            LOG_INFO("SignalReplyModule::handleReceived(): Version requested.");
+        }
         else if (command == SERVICE_DISCOVERY || command == SERVICE_GET_STATUS)
         {
-            if (hopDistanceSinceSender(currentRequest) <= HOP_LIMIT_OBSERVABLE) {
+            if (hopDistanceSinceSender(currentRequest) <= HOP_LIMIT_OBSERVABLE)
+            {
                 LOG_INFO("SignalReplyModule::handleReceived(): Service discovery requested.");
-                reply(currentRequest,command); //HOP_LIMIT_OBSERVABLE
-            } else {
+                reply(currentRequest, command); // HOP_LIMIT_OBSERVABLE
+            }
+            else
+            {
                 LOG_INFO("SignalReplyModule::handleReceived(): Service discovery requested (but ignored - too far away).");
             }
         }
         else if (command == SERVICE_GET_STATUS && currentRequest.to == nodeDB->getNodeNum())
         {
-                LOG_INFO("SignalReplyModule::handleReceived(): Service status requested.");
-                reply(currentRequest,command); 
+            LOG_INFO("SignalReplyModule::handleReceived(): Service status requested.");
+            reply(currentRequest, command);
         }
         else if (command == SERVICE_LOC_ON && currentRequest.to == nodeDB->getNodeNum())
         {
             locServiceEnabled = 1;
             activationLocTime = millis();
             LOG_INFO("SignalReplyModule::handleReceived(): Location service enabled.");
-            reply(currentRequest,command);
+            reply(currentRequest, command);
         }
         else if (command == SERVICE_LOC_OFF && currentRequest.to == nodeDB->getNodeNum())
         {
             locServiceEnabled = 0;
             LOG_INFO("SignalReplyModule::handleReceived(): Location service disabled.");
         }
-
-
-
-
         else if (command == SERVICE_FILT_ON && currentRequest.to == nodeDB->getNodeNum())
         {
             filtServiceEnabled = true;
@@ -243,8 +262,6 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
             filtServiceEnabled = false;
             LOG_INFO("SignalReplyModule::handleReceived(): Filter service disabled - no packet filtering.");
         }
-
-
         else if (command == SERVICE_HOP_ON && currentRequest.to == nodeDB->getNodeNum())
         {
             hopServiceEnabled = true;
@@ -256,48 +273,52 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
             LOG_INFO("SignalReplyModule::handleReceived(): HOP changer disabled.");
         }
 
-
-
-
-        else if (command == REQUEST_PING_REPLY &&  pingServiceEnabled == 1)
+        else if (command == REQUEST_PING_REPLY && pingServiceEnabled == 1)
         {
             if (isWithinTimespanMs(activationPingTime, EXPIRATION_TIME_MS))
             {
                 LOG_INFO("SignalReplyModule::handleReceived(): Ping reply requested.");
-                reply(currentRequest,command);    
-            } else {
+                reply(currentRequest, command);
+            }
+            else
+            {
                 LOG_INFO("SignalReplyModule::handleReceived(): Ping reply ignored (service expired)");
                 pingServiceEnabled = 0;
             }
-        }    
-        else if (command == REQUEST_PING_REPLY &&  pingServiceEnabled == 0)
+        }
+        else if (command == REQUEST_PING_REPLY && pingServiceEnabled == 0)
         {
             LOG_INFO("SignalReplyModule::handleReceived(): Ping reply ignored (OFF)");
         }
-        else if (command == REQUEST_LOC_REPLY &&  locServiceEnabled == 1)
+        else if (command == REQUEST_LOC_REPLY && locServiceEnabled == 1)
         {
-            if (isWithinTimespanMs(activationLocTime, EXPIRATION_TIME_MS)){
+            if (isWithinTimespanMs(activationLocTime, EXPIRATION_TIME_MS))
+            {
                 LOG_INFO("SignalReplyModule::handleReceived(): Location reply requested.");
-                reply(currentRequest,command);
-            } else {
+                reply(currentRequest, command);
+            }
+            else
+            {
                 LOG_INFO("SignalReplyModule::handleReceived(): Location reply ignored (service expired)");
                 locServiceEnabled = 0;
             }
         }
-        else if (command == REQUEST_LOC_REPLY &&  locServiceEnabled == 0)
+        else if (command == REQUEST_LOC_REPLY && locServiceEnabled == 0)
         {
             LOG_INFO("SignalReplyModule::handleReceived(): Location reply ignored (OFF)");
-        } else {
+        }
+        else
+        {
             LOG_INFO("SignalReplyModule::handleReceived()     FROM: %s", std::to_string(currentRequest.from).c_str());
             LOG_INFO("SignalReplyModule::handleReceived()       TO: %s", std::to_string(currentRequest.to).c_str());
-            LOG_INFO("SignalReplyModule::handleReceived()  PORTNUM: %s", std::to_string(currentRequest.decoded.portnum).c_str() );
-            //LOG_INFO("SignalReplyModule::handleReceived()  CHANNEL:", currentRequest.channel);
-            //LOG_INFO("SignalReplyModule::handleReceived()  PRIORITY:", currentRequest.priority);
-            //LOG_INFO("SignalReplyModule::handleReceived()  WANT_ACK:", currentRequest.want_ack);
-            //LOG_INFO("SignalReplyModule::handleReceived()  HOP_LIMIT:", currentRequest.hop_limit);
-            //LOG_INFO("SignalReplyModule::handleReceived()  HOP_START:", currentRequest.hop_start);
-            //LOG_INFO("SignalReplyModule::handleReceived()  RX_RSSI:", currentRequest.rx_rssi);
-            //LOG_INFO("SignalReplyModule::handleReceived()  RX_SNR:", currentRequest.rx_snr);
+            LOG_INFO("SignalReplyModule::handleReceived()  PORTNUM: %s", std::to_string(currentRequest.decoded.portnum).c_str());
+            // LOG_INFO("SignalReplyModule::handleReceived()  CHANNEL:", currentRequest.channel);
+            // LOG_INFO("SignalReplyModule::handleReceived()  PRIORITY:", currentRequest.priority);
+            // LOG_INFO("SignalReplyModule::handleReceived()  WANT_ACK:", currentRequest.want_ack);
+            // LOG_INFO("SignalReplyModule::handleReceived()  HOP_LIMIT:", currentRequest.hop_limit);
+            // LOG_INFO("SignalReplyModule::handleReceived()  HOP_START:", currentRequest.hop_start);
+            // LOG_INFO("SignalReplyModule::handleReceived()  RX_RSSI:", currentRequest.rx_rssi);
+            // LOG_INFO("SignalReplyModule::handleReceived()  RX_SNR:", currentRequest.rx_snr);
         }
     }
     notifyObservers(&currentRequest);

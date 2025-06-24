@@ -384,6 +384,7 @@ extern bool filtServiceEnabled;
 extern bool locServiceEnabled;
 extern int SLINGSHOT_HOP_LIMIT;
 extern float filtPositionAndNodeInfoRatio;
+extern String APP_MOD_VERSION;
 
 //static bool hopServiceEnabled;
 //static bool filtServiceEnabled;

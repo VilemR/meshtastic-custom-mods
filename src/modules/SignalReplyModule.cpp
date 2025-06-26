@@ -255,11 +255,13 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
         else if (command == SERVICE_FILT_ON && currentRequest.to == nodeDB->getNodeNum())
         {
             filtServiceEnabled = true;
+            deactivationFilterTime = 0;
             LOG_INFO("SignalReplyModule::handleReceived(): Filter service enabled.");
         }
         else if (command == SERVICE_FILT_OFF && currentRequest.to == nodeDB->getNodeNum())
         {
             filtServiceEnabled = false;
+            deactivationFilterTime = millis();
             LOG_INFO("SignalReplyModule::handleReceived(): Filter service disabled - no packet filtering.");
         }
         else if (command == SERVICE_HOP_ON && currentRequest.to == nodeDB->getNodeNum())

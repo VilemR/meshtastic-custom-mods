@@ -917,6 +917,7 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
         if (filtServiceEnabled==false && ((millis() - deactivationFilterTime) > (1000 * 60 * 60 * 2))) {
             filtServiceEnabled = true;
             LOG_WARN("handleReceived():Filter re-enabled. Request expired (2hrs)!");
+            
         }
 
         String packetChannelName = channels.getName(p->channel);

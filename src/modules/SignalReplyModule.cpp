@@ -223,7 +223,7 @@ ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &cu
             reply(currentRequest, command);
             LOG_INFO("SignalReplyModule::handleReceived(): Version requested.");
         }
-        else if (command == SERVICE_DISCOVERY || command == SERVICE_GET_STATUS)
+        else if (command == SERVICE_DISCOVERY)
         {
             if (hopDistanceSinceSender(currentRequest) <= HOP_LIMIT_OBSERVABLE)
             {

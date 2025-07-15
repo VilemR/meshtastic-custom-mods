@@ -203,6 +203,22 @@ bool isWithinTimespanMs(uint32_t activationTime, uint32_t timeSpanMs)
 
 ProcessMessage SignalReplyModule::handleReceived(const meshtastic_MeshPacket &currentRequest)
 {
+
+    // Fix 20250713 - false positive ping service enabled bug Serv? returned!
+    if (!isWithinTimespanMs(activationPingTime, EXPIRATION_TIME_MS)){
+        pingServiceEnabled = 0;
+        LOG_INFO("SignalReplyModule::handleReceived(): Ping service expired.");
+    }
+    if (!isWithinTimespanMs(activationLocTime, EXPIRATION_TIME_MS)){
+        locServiceEnabled = 0;
+        LOG_INFO("SignalReplyModule::handleReceived(): Location service expired.");
+    }
+    if (!isWithinTimespanMs(deactivationFilterTime, EXPIRATION_TIME_MS))
+    {
+        filtServiceEnabled = true;
+        LOG_INFO("SignalReplyModule::handleReceived(): Filter service suppression expired - packet filtering active again.");
+    }
+
     if (currentRequest.from != 0x0 && currentRequest.from != nodeDB->getNodeNum())
     {
         SIGNAL_REPLY_MODULE_COMMAND command = getCommand(currentRequest);

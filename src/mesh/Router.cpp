@@ -394,10 +394,22 @@ ErrorCode Router::send(meshtastic_MeshPacket *p)
           p->which_payload_variant == meshtastic_MeshPacket_decoded_tag))
     {
         return meshtastic_Routing_Error_BAD_REQUEST;
+    } else if (p->which_payload_variant == meshtastic_MeshPacket_encrypted_tag) {
+        LOG_INFO("send():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - ENCRYPTED",
+                 p->id, getPortNumName(p->decoded.portnum), p->from, p->to);
+    }  else if (p->which_payload_variant == meshtastic_MeshPacket_decoded_tag) {
+        LOG_ERROR("send():[%x] %s %x -> %x HOP:%d/%d (CH:%x / %s) - DECRYPTED",
+                 p->id, getPortNumName(p->decoded.portnum), p->from, p->to);
+
     }
 
     fixPriority(p); // Before encryption, fix the priority if it's unset
-    if (p->which_payload_variant == meshtastic_MeshPacket_decoded_tag)
+    if (p->which_payload_variant == meshtastic_MeshPacket_decoded_tag
+    
+        // dirty debug!!!
+        && false
+    
+    )
     {
         ChannelIndex chIndex = p->channel; // keep as a local because we are about to change it
         meshtastic_MeshPacket *p_decoded = packetPool.allocCopy(*p);

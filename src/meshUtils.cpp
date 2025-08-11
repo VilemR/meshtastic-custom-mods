@@ -59,15 +59,22 @@ char *strnstr(const char *s, const char *find, size_t slen)
 }
 
 void printBytes(const char *label, const uint8_t *p, size_t numbytes)
-{
+{   const int chunkSize = 32;
     int labelSize = strlen(label);
-    char *messageBuffer = new char[labelSize + (numbytes * 3) + 2];
-    strncpy(messageBuffer, label, labelSize);
-    for (size_t i = 0; i < numbytes; i++)
-        snprintf(messageBuffer + labelSize + i * 3, 4, " %02x", p[i]);
-    strcpy(messageBuffer + labelSize + numbytes * 3, "\n");
-    LOG_DEBUG(messageBuffer);
-    delete[] messageBuffer;
+    for (size_t offset = 0; offset < numbytes; offset += chunkSize) {
+        size_t thisChunk = (numbytes - offset > chunkSize) ? chunkSize : (numbytes - offset);
+        // Buffer: label + (chunkSize * 3) + newline + null terminator
+        char *messageBuffer = new char[labelSize + (chunkSize * 3) + 2];
+        strncpy(messageBuffer, label, labelSize);
+        messageBuffer[labelSize] = '\0'; // Ensure null-termination after label
+
+        for (size_t i = 0; i < thisChunk; i++) {
+            snprintf(messageBuffer + labelSize + i * 3, 4, " %02x", p[offset + i]);
+        }
+        strcpy(messageBuffer + labelSize + thisChunk * 3, "\n");
+        LOG_DEBUG(messageBuffer);
+        delete[] messageBuffer;
+    }
 }
 
 bool memfll(const uint8_t *mem, uint8_t find, size_t numbytes)

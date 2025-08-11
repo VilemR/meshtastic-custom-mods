@@ -416,6 +416,10 @@ void RadioLibInterface::handleReceiveInterrupt()
 #endif
 
     int state = iface->readData((uint8_t *)&radioBuffer, length);
+
+    printBytes("Raw incoming packet: ", (uint8_t *)&radioBuffer, length);
+
+
 #if ARCH_PORTDUINO
     if (settingsMap[logoutputlevel] == level_trace) {
         printBytes("Raw incoming packet: ", (uint8_t *)&radioBuffer, length);
@@ -471,7 +475,7 @@ void RadioLibInterface::handleReceiveInterrupt()
             memcpy(mp->encrypted.bytes, radioBuffer.payload, payloadLen);
             mp->encrypted.size = payloadLen;
 
-            printPacket("Lora RX", mp);
+            printPacket("Lora RX (received packet) : ", mp);
 
             airTime->logAirtime(RX_LOG, xmitMsec);
 

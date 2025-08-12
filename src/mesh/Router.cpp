@@ -405,10 +405,8 @@ ErrorCode Router::send(meshtastic_MeshPacket *p)
 
     fixPriority(p); // Before encryption, fix the priority if it's unset
     if (p->which_payload_variant == meshtastic_MeshPacket_decoded_tag
-    
         // dirty debug!!!
-        && false
-    
+        // && false
     )
     {
         ChannelIndex chIndex = p->channel; // keep as a local because we are about to change it

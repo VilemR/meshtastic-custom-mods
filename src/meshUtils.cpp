@@ -71,7 +71,8 @@ void printBytes(const char *label, const uint8_t *p, size_t numbytes)
         for (size_t i = 0; i < thisChunk; i++) {
             snprintf(messageBuffer + labelSize + i * 3, 4, " %02x", p[offset + i]);
         }
-        strcpy(messageBuffer + labelSize + thisChunk * 3, "\n");
+        //strcpy(messageBuffer + labelSize + thisChunk * 3, "\n");
+        strcpy(messageBuffer + labelSize + thisChunk * 3, " ");
         LOG_DEBUG(messageBuffer);
         delete[] messageBuffer;
     }

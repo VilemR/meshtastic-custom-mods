@@ -73,7 +73,7 @@ void printBytes(const char *label, const uint8_t *p, size_t numbytes)
         }
         //strcpy(messageBuffer + labelSize + thisChunk * 3, "\n");
         strcpy(messageBuffer + labelSize + thisChunk * 3, " ");
-        LOG_DEBUG(messageBuffer);
+        LOG_ERROR(messageBuffer);
         delete[] messageBuffer;
     }
 }

@@ -349,7 +349,7 @@ void printPacket(const char *prefix, const meshtastic_MeshPacket *p)
         out += DEBUG_PORT.mt_sprintf(" priority=%d", p->priority);
 
     out += ")";
-    LOG_DEBUG("%s", out.c_str());
+    LOG_ERROR("%s", out.c_str());
 #endif
 }
 

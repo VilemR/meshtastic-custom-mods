@@ -484,6 +484,12 @@ DecodeState perhapsDecode(meshtastic_MeshPacket *p)
     }
 
     if (p->which_payload_variant == meshtastic_MeshPacket_decoded_tag)
+        LOG_ERROR("Node 0x%x perhapsDecode() : meshtastic_MeshPacket_decoded (not encrypted)", p->from);
+
+        printPacket("perhapsDecode()", p);
+        printBytes("perhapsDecode() ", p->decoded.payload.bytes, p->decoded.payload.size);
+
+
         return DecodeState::DECODE_SUCCESS; // If packet was already decoded just return
 
     size_t rawSize = p->encrypted.size;
@@ -505,7 +511,7 @@ DecodeState perhapsDecode(meshtastic_MeshPacket *p)
         if (crypto->decryptCurve25519(p->from, nodeDB->getMeshNode(p->from)->user.public_key, p->id, rawSize, p->encrypted.bytes,
                                       bytes))
         {
-            LOG_INFO("PKI Decryption worked!");
+            LOG_ERROR("PKI Decryption worked!");
 
             meshtastic_Data decodedtmp;
             memset(&decodedtmp, 0, sizeof(decodedtmp));
